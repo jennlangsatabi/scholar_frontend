@@ -1,0 +1,1038 @@
+import 'package:flutter/material.dart';
+
+import 'services/backend_api.dart';
+import 'scholarship_types.dart';
+
+class ManageScholarScreen extends StatefulWidget {
+  const ManageScholarScreen({super.key});
+
+  @override
+  State<ManageScholarScreen> createState() => _ManageScholarScreenState();
+}
+
+class _ManageScholarScreenState extends State<ManageScholarScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _middleNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _courseController = TextEditingController();
+  final TextEditingController _yearLevelController = TextEditingController();
+  final TextEditingController _assignedAreaController = TextEditingController();
+
+  String _selectedAcademicType = 'Type A';
+  String _selectedSportType = 'Basketball';
+  String _selectedGiftType = ScholarshipTypes.giftTypeOptions.keys.first;
+
+  final List<String> _categories = const [
+    'All',
+    'Student Assistant',
+    'Academic Scholar',
+    'Varsity Scholar',
+    'Gift of Education',
+  ];
+
+  List<Map<String, dynamic>> _scholars = [];
+  List<Map<String, dynamic>> _filteredScholars = [];
+  bool _isLoading = true;
+  bool _isProcessing = false;
+  String _selectedFilterCategory = 'All';
+  String _selectedFormCategory = 'Student Assistant';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchScholars();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _courseController.dispose();
+    _yearLevelController.dispose();
+    _assignedAreaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchScholars() async {
+    setState(() => _isLoading = true);
+    try {
+      _scholars = await BackendApi.unwrapList(
+        BackendApi.getJson('get_scholars.php'),
+      );
+      _applyFilter();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load scholars: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _applyFilter() {
+    final q = _searchController.text.trim().toLowerCase();
+    final category = _normalizeCategory(_selectedFilterCategory);
+
+    final filtered = _scholars.where((s) {
+      final first = (s['first_name'] ?? '').toString().toLowerCase();
+      final middle = (s['middle_name'] ?? '').toString().toLowerCase();
+      final last = (s['last_name'] ?? '').toString().toLowerCase();
+      final email = (s['email'] ?? '').toString().toLowerCase();
+      final course = (s['course'] ?? '').toString().toLowerCase();
+      final scholarCategory = (s['scholarship_category'] ?? '').toString();
+      final normalizedCategory = _normalizeCategory(scholarCategory);
+      final assigned = (s['assigned_area'] ?? '').toString().toLowerCase();
+
+      final inCategory = category == 'all' || normalizedCategory == category;
+      final inQuery = q.isEmpty ||
+          first.contains(q) ||
+          middle.contains(q) ||
+          last.contains(q) ||
+          email.contains(q) ||
+          course.contains(q) ||
+          normalizedCategory.contains(q) ||
+          assigned.contains(q);
+
+      return inCategory && inQuery;
+    }).toList();
+
+    setState(() => _filteredScholars = filtered);
+  }
+
+  Future<void> addScholar() async {
+    if (_isProcessing) return;
+
+    if (_firstNameController.text.trim().isEmpty ||
+        _lastNameController.text.trim().isEmpty ||
+        _courseController.text.trim().isEmpty ||
+        _yearLevelController.text.trim().isEmpty) {
+      _toast('Please complete required fields.', Colors.orange);
+      return;
+    }
+
+    setState(() => _isProcessing = true);
+    try {
+      final giftType = _selectedFormCategory == 'Gift of Education'
+          ? _giftTypePayload()
+          : '';
+      final payload = {
+        "first_name": _firstNameController.text.trim(),
+        "middle_name": _middleNameController.text.trim(),
+        "last_name": _lastNameController.text.trim(),
+        "school": "JMC",
+        "course": _courseController.text.trim(),
+        "year_level": _yearLevelController.text.trim(),
+        "scholarship_category": _toServerCategory(_selectedFormCategory),
+        "assigned_area": _selectedFormCategory == 'Student Assistant'
+            ? _assignedAreaController.text.trim()
+            : '',
+        "academic_type": _academicTypePayload(),
+        "sport_type": _sportTypePayload(),
+        "gift_type": giftType,
+      };
+
+      final data = await BackendApi.postJson(
+        'add_scholar.php',
+        body: payload,
+      );
+
+      if (data['status'] == 'success') {
+        setState(() => _selectedFilterCategory = _selectedFormCategory);
+        _toast('Scholar added successfully.', Colors.green);
+        await fetchScholars();
+      } else {
+        _toast(data['message']?.toString() ?? 'Failed to add scholar.',
+            Colors.red);
+      }
+    } catch (e) {
+      _toast('Error adding scholar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _editScholar(String scholarId) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      final data = await BackendApi.postJson(
+        'edit_scholar.php',
+        body: {
+          "scholar_id": scholarId,
+          "course": _courseController.text.trim(),
+          "year_level": _yearLevelController.text.trim(),
+          "assigned_area": _selectedFormCategory == 'Student Assistant'
+              ? _assignedAreaController.text.trim()
+              : '',
+          "academic_type": _academicTypePayload(),
+          "sport_type": _sportTypePayload(),
+          "gift_type": _selectedFormCategory == 'Gift of Education'
+              ? _giftTypePayload()
+              : '',
+        },
+      );
+
+      if (data['status'] == 'success') {
+        _toast('Scholar updated.', Colors.blue);
+        await fetchScholars();
+      } else {
+        _toast(data['message']?.toString() ?? 'Update failed.', Colors.red);
+      }
+    } catch (e) {
+      _toast('Error editing scholar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _deleteScholar(String userId) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      final data = await BackendApi.postForm(
+        'delete_scholar.php',
+        body: {"user_id": userId},
+      );
+
+      if (data['status'] == 'success') {
+        _toast('Scholar deleted.', Colors.red);
+        await fetchScholars();
+      } else {
+        _toast(data['message']?.toString() ?? 'Delete failed.', Colors.red);
+      }
+    } catch (e) {
+      _toast('Error deleting scholar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  void _toast(String msg, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+  }
+
+  String _fullName(Map<String, dynamic> s) {
+    final first = (s['first_name'] ?? '').toString().trim();
+    final middle = (s['middle_name'] ?? '').toString().trim();
+    final last = (s['last_name'] ?? '').toString().trim();
+    final middlePart = middle.isEmpty ? '' : ' ${middle[0]}.';
+    return '$first$middlePart $last'.trim();
+  }
+
+  void _clearForm() {
+    _firstNameController.clear();
+    _middleNameController.clear();
+    _lastNameController.clear();
+    _courseController.clear();
+    _yearLevelController.clear();
+    _assignedAreaController.clear();
+    _selectedAcademicType = 'Type A';
+    _selectedSportType = 'Basketball';
+    _selectedGiftType = ScholarshipTypes.giftTypeOptions.keys.first;
+    _selectedFormCategory = _selectedFilterCategory == 'All'
+        ? 'Student Assistant'
+        : _selectedFilterCategory;
+  }
+
+  void _showDeleteConfirmation(String userId, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          "Delete Scholar",
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        content: Text("Are you sure you want to remove $name?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteScholar(userId);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFormDialog({
+    required String title,
+    required VoidCallback onSave,
+    bool isEdit = false,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                backgroundColor: const Color(0xFFFCFBFE),
+                title: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF2D0D44),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                content: SizedBox(
+                  width: 560,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE7DDF2)),
+                          ),
+                          child: Text(
+                            isEdit
+                                ? 'Update course and year information.'
+                                : 'Enter scholar profile information.',
+                            style: const TextStyle(
+                              color: Color(0xFF6A5A79),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        if (!isEdit) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _modalField(
+                                  controller: _firstNameController,
+                                  label: 'First Name*',
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _modalField(
+                                  controller: _middleNameController,
+                                  label: 'Middle Name',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _modalField(
+                            controller: _lastNameController,
+                            label: 'Last Name*',
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedFormCategory == 'All'
+                              ? 'Student Assistant'
+                              : _selectedFormCategory,
+                          items: _categories
+                              .where((c) => c != 'All')
+                              .map((c) =>
+                                  DropdownMenuItem(value: c, child: Text(c)))
+                              .toList(),
+                          onChanged: (v) {
+                            if (v == null) return;
+                            setDialogState(() {
+                              _selectedFormCategory = v;
+                              if (v != 'Student Assistant') {
+                                _assignedAreaController.clear();
+                              }
+                              if (v == 'Gift of Education' &&
+                                  !ScholarshipTypes.giftTypeOptions
+                                      .containsKey(_selectedGiftType)) {
+                                _selectedGiftType =
+                                    ScholarshipTypes.giftTypeOptions.keys.first;
+                              }
+                            });
+                          },
+                          decoration: _modalInputDecoration('Category'),
+                        ),
+                        const SizedBox(height: 10),
+                        if (_selectedFormCategory == 'Academic Scholar') ...[
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedAcademicType,
+                            items: const ['Type A', 'Type B', 'Type C']
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDialogState(() => _selectedAcademicType = v);
+                            },
+                            decoration: _modalInputDecoration('Academic Type'),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_selectedFormCategory == 'Varsity Scholar') ...[
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedSportType,
+                            items: const ['Basketball', 'Volleyball']
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDialogState(() => _selectedSportType = v);
+                            },
+                            decoration: _modalInputDecoration('Sport Type'),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_selectedFormCategory == 'Gift of Education') ...[
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedGiftType,
+                            items: ScholarshipTypes.giftTypeOptions.keys
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDialogState(() => _selectedGiftType = v);
+                            },
+                            decoration: _modalInputDecoration('Gift Type'),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _modalField(
+                                controller: _courseController,
+                                label: 'Course*',
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _modalField(
+                                controller: _yearLevelController,
+                                label: 'Year Level*',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (_selectedFormCategory == 'Student Assistant')
+                          _modalField(
+                            controller: _assignedAreaController,
+                            label: 'Assigned Area',
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A2A6A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            Navigator.pop(context);
+                            onSave();
+                          },
+                    child: _isProcessing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save'),
+                  ),
+                ],
+              )),
+    );
+  }
+
+  InputDecoration _modalInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE7DDF2)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF6A3D8F)),
+      ),
+    );
+  }
+
+  Widget _modalField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: _modalInputDecoration(label),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF3F2F7),
+      child: RefreshIndicator(
+        onRefresh: fetchScholars,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 14),
+            _buildToolbar(),
+            const SizedBox(height: 14),
+            _buildStatsRow(),
+            const SizedBox(height: 14),
+            _buildScholarTable(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Scholar Management',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF2D0D44),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Manage scholar records, assignments, and scholarship categories.',
+            style: TextStyle(color: Color(0xFF6A5A79)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolbar() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: TextField(
+            controller: _searchController,
+            onChanged: (_) => _applyFilter(),
+            decoration: InputDecoration(
+              hintText: 'Search by name, email, course, category, or area...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 230,
+          child: DropdownButtonFormField<String>(
+            initialValue: _selectedFilterCategory,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            items: _categories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
+            onChanged: (v) {
+              if (v == null) return;
+              setState(() => _selectedFilterCategory = v);
+              _applyFilter();
+            },
+          ),
+        ),
+        const SizedBox(width: 10),
+        FilledButton.icon(
+          onPressed: () {
+            _clearForm();
+            _showFormDialog(title: 'Add New Scholar', onSave: addScholar);
+          },
+          icon: const Icon(Icons.person_add_alt_1),
+          label: const Text('Add Scholar'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow() {
+    final total = _scholars.length;
+    final visible = _filteredScholars.length;
+    final selectedLabel = _selectedFilterCategory == 'All'
+        ? 'Student Assistants'
+        : _selectedFilterCategory;
+    final selectedKey = _normalizeCategory(_selectedFilterCategory);
+    final selectedCount = _scholars.where((s) {
+      final cat = _normalizeCategory(
+        (s['scholarship_category'] ?? '').toString(),
+      );
+      return selectedKey == 'all'
+          ? cat == 'student assistant'
+          : cat == selectedKey;
+    }).length;
+    final selectedAccent = _categoryAccentForStats(selectedKey);
+    return Row(
+      children: [
+        _statCard(
+          'Total Scholars',
+          total.toString(),
+          const Color(0xFF5E35B1),
+          Icons.people_alt_rounded,
+        ),
+        const SizedBox(width: 10),
+        _statCard(
+          'Filtered Results',
+          visible.toString(),
+          const Color.fromARGB(255, 215, 171, 196),
+          Icons.filter_alt_rounded,
+        ),
+        const SizedBox(width: 10),
+        _statCard(
+          selectedLabel,
+          selectedCount.toString(),
+          selectedAccent,
+          _categoryIconForStats(selectedKey),
+        ),
+      ],
+    );
+  }
+
+  Color _categoryAccentForStats(String key) {
+    switch (key) {
+      case 'student assistant':
+        return const Color(0xFF2E7D32);
+      case 'academic scholar':
+        return const Color(0xFF6A1B9A);
+      case 'varsity scholar':
+        return const Color(0xFF5E35B1);
+      case 'gift of education':
+        return const Color(0xFFD84315);
+      case 'all':
+      default:
+        return const Color.fromARGB(255, 184, 141, 178);
+    }
+  }
+
+  IconData _categoryIconForStats(String key) {
+    switch (key) {
+      case 'student assistant':
+        return Icons.badge_outlined;
+      case 'academic scholar':
+        return Icons.school_outlined;
+      case 'varsity scholar':
+        return Icons.sports_basketball_outlined;
+      case 'gift of education':
+        return Icons.volunteer_activism_outlined;
+      case 'all':
+      default:
+        return Icons.groups_rounded;
+    }
+  }
+
+  Color _shiftLightness(Color base, double delta) {
+    final hsl = HSLColor.fromColor(base);
+    return hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0)).toColor();
+  }
+
+  Widget _statCard(String label, String value, Color color, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _shiftLightness(color, 0.30).withOpacity(0.55),
+              Colors.white.withOpacity(0.96),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.22)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              bottom: -14,
+              child: Opacity(
+                opacity: 0.10,
+                child: Icon(icon, size: 96, color: color),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color.withOpacity(0.18)),
+                      ),
+                      child: Icon(icon, color: color, size: 18),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF6A5A79),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    height: 1.0,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScholarTable() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: _isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(30),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : _filteredScholars.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('No scholars found for your current filters.'),
+                )
+              : Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F1FB),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(14),
+                          topRight: Radius.circular(14),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Expanded(flex: 3, child: Text('Scholar')),
+                          Expanded(flex: 3, child: Text('Academic Info')),
+                          Expanded(flex: 2, child: Text('Category')),
+                          Expanded(flex: 2, child: Text('Assigned / Type')),
+                          Expanded(flex: 2, child: Text('Actions')),
+                        ],
+                      ),
+                    ),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _filteredScholars.length,
+                      separatorBuilder: (_, __) =>
+                          Divider(height: 1, color: Colors.grey.shade200),
+                      itemBuilder: (context, index) {
+                        final s = _filteredScholars[index];
+                        final name = _fullName(s);
+                        final email = (s['email'] ?? '').toString();
+                        final course = (s['course'] ?? '-').toString();
+                        final year = (s['year_level'] ?? '-').toString();
+                        final rawCategory =
+                            (s['scholarship_category'] ?? '').toString().trim();
+                        final category = _displayCategory(rawCategory);
+                        final rawAssigned =
+                            (s['assigned_area'] ?? '-').toString();
+                        final assignedDisplay = _assignedTypeLabel(s);
+
+                        return Container(
+                          color: index.isEven
+                              ? Colors.white
+                              : const Color(0xFFFCFBFE),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      email,
+                                      style: const TextStyle(
+                                          color: Color(0xFF6A5A79),
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text("$course (Year $year)"),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(category),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(assignedDisplay),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Edit',
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.blue),
+                                      onPressed: () {
+                                        _courseController.text = course;
+                                        _yearLevelController.text = year;
+                                        _assignedAreaController.text =
+                                            rawAssigned == '-'
+                                                ? ''
+                                                : rawAssigned;
+                                        _selectedFormCategory =
+                                            _displayCategory(rawCategory);
+                                        _selectedAcademicType =
+                                            _academicTypeLabel(
+                                                s['academic_type']);
+                                        _selectedSportType =
+                                            _sportTypeLabel(s['sport_type']);
+                                        _selectedGiftType = _giftTypeLabel(
+                                                    s['gift_type'])
+                                                .isEmpty
+                                            ? ScholarshipTypes
+                                                .giftTypeOptions.keys.first
+                                            : _giftTypeLabel(s['gift_type']);
+                                        _showFormDialog(
+                                          title: 'Edit Scholar',
+                                          isEdit: true,
+                                          onSave: () => _editScholar(
+                                              (s['scholar_id'] ?? '')
+                                                  .toString()),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Delete',
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () => _showDeleteConfirmation(
+                                        (s['user_id'] ?? '').toString(),
+                                        name,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  String _normalizeCategory(String raw) {
+    final value = raw.trim().toLowerCase();
+    if (value.isEmpty ||
+        value == 'student assistant' ||
+        value == 'student_assistant') {
+      return 'student assistant';
+    }
+    if (value == 'academic' || value.contains('academic')) {
+      return 'academic scholar';
+    }
+    if (value == 'varsity' || value.contains('varsity')) {
+      return 'varsity scholar';
+    }
+    if (value == 'gift_of_education' || value.contains('gift')) {
+      return 'gift of education';
+    }
+    return value;
+  }
+
+  String _displayCategory(String raw) {
+    final normalized = _normalizeCategory(raw);
+    switch (normalized) {
+      case 'student assistant':
+        return 'Student Assistant';
+      case 'academic scholar':
+        return 'Academic Scholar';
+      case 'varsity scholar':
+        return 'Varsity Scholar';
+      case 'gift of education':
+        return 'Gift of Education';
+      default:
+        return raw.isEmpty ? 'Student Assistant' : raw;
+    }
+  }
+
+  String _assignedTypeLabel(Map<String, dynamic> s) {
+    final normalized = _normalizeCategory(
+      (s['scholarship_category'] ?? '').toString(),
+    );
+    if (normalized == 'student assistant') {
+      final assigned = (s['assigned_area'] ?? '').toString().trim();
+      return assigned.isEmpty ? '-' : assigned;
+    }
+    if (normalized == 'academic scholar') {
+      return _academicTypeLabel(s['academic_type']);
+    }
+    if (normalized == 'varsity scholar') {
+      return _sportTypeLabel(s['sport_type']);
+    }
+    if (normalized == 'gift of education') {
+      final label = _giftTypeLabel(s['gift_type']);
+      return label.isEmpty ? '-' : label;
+    }
+    return '-';
+  }
+
+  String _toServerCategory(String label) {
+    switch (label) {
+      case 'Academic Scholar':
+        return 'academic';
+      case 'Varsity Scholar':
+        return 'varsity';
+      case 'Gift of Education':
+        return 'gift_of_education';
+      case 'Student Assistant':
+      default:
+        return 'student_assistant';
+    }
+  }
+
+  String _academicTypePayload() {
+    if (_selectedFormCategory != 'Academic Scholar') return '';
+    return _selectedAcademicType.replaceAll('Type ', '').trim().toUpperCase();
+  }
+
+  String _sportTypePayload() {
+    if (_selectedFormCategory != 'Varsity Scholar') return '';
+    return _selectedSportType.trim();
+  }
+
+  String _giftTypePayload() {
+    if (_selectedFormCategory != 'Gift of Education') return '';
+    return ScholarshipTypes.giftTypeOptions[_selectedGiftType] ??
+        ScholarshipTypes.giftTypeOptions.values.first;
+  }
+
+  String _academicTypeLabel(dynamic raw) {
+    final value = (raw ?? '').toString().trim().toUpperCase();
+    if (value == 'A') return 'Type A';
+    if (value == 'B') return 'Type B';
+    if (value == 'C') return 'Type C';
+    return 'Type A';
+  }
+
+  String _sportTypeLabel(dynamic raw) {
+    final value = (raw ?? '').toString().trim();
+    return value.isEmpty ? 'Basketball' : value;
+  }
+
+  String _giftTypeLabel(dynamic raw) {
+    return ScholarshipTypes.giftTypeLabel(raw);
+  }
+}

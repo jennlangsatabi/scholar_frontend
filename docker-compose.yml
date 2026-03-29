@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # 1. NGINX (Web Server)
+  nginx:
+    image: nginx:alpine
+    container_name: scholar-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - C:/xampp/htdocs/scholar_php:/var/www/html
+      - C:/xampp/htdocs/scholar_php/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - scholar-stack
+
+  # 2. PHP-FPM (App Engine)
+  php:
+    build: C:/xampp/htdocs/scholar_php
+    container_name: php-backend
+    networks:
+      - scholar-stack
+    depends_on:
+      - mysql
+      - redis
+
+  # 3. MYSQL (Database)
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Erich.guden05
+      MYSQL_DATABASE: scholar_sys
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - scholar-stack
+
+  # 4. REDIS (Cache)
+  redis:
+    image: redis:alpine
+    container_name: scholar-redis
+    networks:
+      - scholar-stack
+
+networks:
+  scholar-stack:
+    driver: bridge
+
+volumes:
+  mysql_data:
