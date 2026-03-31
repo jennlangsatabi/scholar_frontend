@@ -1,14 +1,11 @@
 import 'package:flutter/foundation.dart';
 
-class ApiConfig {
-  static const String _defaultApiRoot = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: '',
-  );
+import '../config/app_env.dart';
 
+class ApiConfig {
   static String get baseUrl {
-    if (_defaultApiRoot.isNotEmpty) {
-      return _defaultApiRoot;
+    if (AppEnv.hasApiBaseUrl) {
+      return AppEnv.apiBaseUrl;
     }
 
     if (kIsWeb) {
