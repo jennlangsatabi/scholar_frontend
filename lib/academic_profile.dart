@@ -443,7 +443,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                 _modalField(yearController, 'Year Level'),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedAcademic,
+                  value: selectedAcademic,
                   items: const ['Type A', 'Type B', 'Type C']
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),

@@ -285,7 +285,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                                   )
                                 else
                                   DropdownButtonFormField<String>(
-                                    initialValue: _selectedScholarId,
+                                    value: _selectedScholarId,
                                     items: _scholars
                                         .map((s) => DropdownMenuItem(
                                               value: (s['user_id'] ?? '')

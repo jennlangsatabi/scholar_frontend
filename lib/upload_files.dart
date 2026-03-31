@@ -625,7 +625,7 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
         border: Border.all(color: const Color(0xFFDABCE8)),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: value,
+        value: value,
         decoration: InputDecoration(
           border: InputBorder.none,
           labelText: label,

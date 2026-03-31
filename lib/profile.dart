@@ -518,7 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (isGift) ...[
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    initialValue: selectedGift,
+                    value: selectedGift,
                     items: ScholarshipTypes.giftTypeLabels
                         .map((e) => DropdownMenuItem(
                               value: e,

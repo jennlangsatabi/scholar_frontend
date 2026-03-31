@@ -1152,7 +1152,7 @@ class _AdminNotificationChatSheetState
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                   child: DropdownButtonFormField<String>(
-                    initialValue: _visibility,
+                    value: _visibility,
                     decoration: InputDecoration(
                       labelText: 'Visibility',
                       filled: true,
