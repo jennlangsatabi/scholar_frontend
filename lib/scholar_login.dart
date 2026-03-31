@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
 import 'services/backend_api.dart';
 import 'services/api_config.dart';
@@ -105,11 +106,19 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
           _showError(data['message'] ?? "Login Failed");
         }
     } catch (e) {
-      _showError("Connection Error: can't reach ${ApiConfig.baseUrl}.");
+      _showError(_buildConnectionErrorMessage(e));
       debugPrint("Scholar login error: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _buildConnectionErrorMessage(Object error) {
+    if (error is ClientException) {
+      return 'Connection Error: Chrome blocked the request to ${ApiConfig.baseUrl}. '
+          'For `flutter run -d chrome`, enable CORS on the PHP server or serve the built web app from Apache/XAMPP.';
+    }
+    return "Connection Error: can't reach ${ApiConfig.baseUrl}.";
   }
 
   bool _matchesSelectedRole(String backendCategory, String selected) {

@@ -18,6 +18,10 @@
   - Main tables used: `users`, `scholars`, `applications`, `submissions`, `notifications`, `replies`, `requirements`
   - Optional tables used if present: `announcements`, `duty_logs`
 
+## Deployment Scope
+
+The active codebase is wired to a custom PHP/MySQL backend.
+
 ## Dart File Responsibilities
 
 - `main.dart`: app root, role/login flow, switches to admin or scholar shell.
@@ -124,6 +128,35 @@
 - Reports
   - Tables: `scholars`, `submissions`
 
+## Database Relations
+
+The project currently depends on these table relationships:
+
+- `users.id -> scholars.user_id`
+- `users.id -> notifications.user_id`
+- `users.id -> replies.user_id`
+- `scholars.scholar_id -> applications.scholar_id`
+- `applications.application_id -> submissions.application_id`
+- `requirements.requirement_id -> submissions.requirement_id`
+- `notifications.notification_id -> replies.notification_id`
+- `scholars.scholar_id -> evaluations.scholar_id`
+
+Conceptual graph:
+
+```text
+users
+  |- scholars
+  |    |- applications
+  |         |- submissions
+  |              |- requirements
+  |    |- evaluations
+  |
+  |- notifications
+  |    |- replies
+  |
+  |- announcements
+```
+
 ## Required Database Connections
 
 - Scholar profiles -> `scholars`
@@ -203,26 +236,26 @@ final request = http.MultipartRequest(
 ## Files Changed
 
 - Flutter:
-  - [lib/services/api_config.dart](/c:/Projects/scholar_flutter/lib/services/api_config.dart)
-  - [lib/services/backend_api.dart](/c:/Projects/scholar_flutter/lib/services/backend_api.dart)
-  - [lib/admin_login.dart](/c:/Projects/scholar_flutter/lib/admin_login.dart)
-  - [lib/scholar_login.dart](/c:/Projects/scholar_flutter/lib/scholar_login.dart)
-  - [lib/admin_managescholar.dart](/c:/Projects/scholar_flutter/lib/admin_managescholar.dart)
-  - [lib/scholar_main.dart](/c:/Projects/scholar_flutter/lib/scholar_main.dart)
-  - [lib/notification.dart](/c:/Projects/scholar_flutter/lib/notification.dart)
-  - [lib/admin_notification.dart](/c:/Projects/scholar_flutter/lib/admin_notification.dart)
-  - [lib/announcement.dart](/c:/Projects/scholar_flutter/lib/announcement.dart)
-  - [lib/upload_files.dart](/c:/Projects/scholar_flutter/lib/upload_files.dart)
-  - [lib/student_upload_screen.dart](/c:/Projects/scholar_flutter/lib/student_upload_screen.dart)
-  - [lib/profile.dart](/c:/Projects/scholar_flutter/lib/profile.dart)
-  - [lib/academic_profile.dart](/c:/Projects/scholar_flutter/lib/academic_profile.dart)
-  - [lib/varsity_profile.dart](/c:/Projects/scholar_flutter/lib/varsity_profile.dart)
-  - [lib/academic_dashboard.dart](/c:/Projects/scholar_flutter/lib/academic_dashboard.dart)
-  - [lib/varsity_dashboard.dart](/c:/Projects/scholar_flutter/lib/varsity_dashboard.dart)
-  - [lib/gift_of_education_dashboard.dart](/c:/Projects/scholar_flutter/lib/gift_of_education_dashboard.dart)
-  - [lib/monitoring.dart](/c:/Projects/scholar_flutter/lib/monitoring.dart)
-  - [lib/reports.dart](/c:/Projects/scholar_flutter/lib/reports.dart)
-  - [lib/verification.dart](/c:/Projects/scholar_flutter/lib/verification.dart)
+  - `lib/services/api_config.dart`
+  - `lib/services/backend_api.dart`
+  - `lib/admin_login.dart`
+  - `lib/scholar_login.dart`
+  - `lib/admin_managescholar.dart`
+  - `lib/scholar_main.dart`
+  - `lib/notification.dart`
+  - `lib/admin_notification.dart`
+  - `lib/announcement.dart`
+  - `lib/upload_files.dart`
+  - `lib/student_upload_screen.dart`
+  - `lib/profile.dart`
+  - `lib/academic_profile.dart`
+  - `lib/varsity_profile.dart`
+  - `lib/academic_dashboard.dart`
+  - `lib/varsity_dashboard.dart`
+  - `lib/gift_of_education_dashboard.dart`
+  - `lib/monitoring.dart`
+  - `lib/reports.dart`
+  - `lib/verification.dart`
 - PHP:
   - `C:\xampp\htdocs\scholar_php\auth_login.php`
   - `C:\xampp\htdocs\scholar_php\get_sa_stats.php`
