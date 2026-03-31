@@ -1621,7 +1621,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                initialValue: selectedAcademicType,
+                value: selectedAcademicType,
                 items: academicTypeOptions
                     .map(
                       (label) =>
@@ -1851,7 +1851,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  initialValue: selectedGiftType,
+                  value: selectedGiftType,
                   items: ScholarshipTypes.giftTypeLabels
                       .map(
                         (label) =>
@@ -1887,7 +1887,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedRenewalStatus,
+                  value: selectedRenewalStatus,
                   items: renewalOptions
                       .map(
                         (label) =>

@@ -247,7 +247,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                               ),
                               const SizedBox(height: 10),
                               DropdownButtonFormField<String>(
-                                initialValue: selectedAudience,
+                                value: selectedAudience,
                                 items: _audiences
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
