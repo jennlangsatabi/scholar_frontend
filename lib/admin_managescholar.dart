@@ -139,9 +139,9 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         "gift_type": giftType,
       };
 
-      final data = await BackendApi.postJson(
+      final data = await BackendApi.postForm(
         'add_scholar.php',
-        body: payload,
+        body: _stringifyPayload(payload),
       );
 
       if (data['status'] == 'success') {
@@ -163,21 +163,23 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     try {
-      final data = await BackendApi.postJson(
+      final payload = {
+        "scholar_id": scholarId,
+        "course": _courseController.text.trim(),
+        "year_level": _yearLevelController.text.trim(),
+        "assigned_area": _selectedFormCategory == 'Student Assistant'
+            ? _assignedAreaController.text.trim()
+            : '',
+        "academic_type": _academicTypePayload(),
+        "sport_type": _sportTypePayload(),
+        "gift_type": _selectedFormCategory == 'Gift of Education'
+            ? _giftTypePayload()
+            : '',
+      };
+
+      final data = await BackendApi.postForm(
         'edit_scholar.php',
-        body: {
-          "scholar_id": scholarId,
-          "course": _courseController.text.trim(),
-          "year_level": _yearLevelController.text.trim(),
-          "assigned_area": _selectedFormCategory == 'Student Assistant'
-              ? _assignedAreaController.text.trim()
-              : '',
-          "academic_type": _academicTypePayload(),
-          "sport_type": _sportTypePayload(),
-          "gift_type": _selectedFormCategory == 'Gift of Education'
-              ? _giftTypePayload()
-              : '',
-        },
+        body: _stringifyPayload(payload),
       );
 
       if (data['status'] == 'success') {
@@ -1145,8 +1147,14 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   }
 
   String _initialScholarshipStatusPayload() {
-    // Deployed PHP expects a short status value for inserts.
-    return 'Pending';
+    // Deployed PHP validates this value against allowed scholarship states.
+    return 'Active';
+  }
+
+  Map<String, String> _stringifyPayload(Map<String, dynamic> payload) {
+    return payload.map(
+      (key, value) => MapEntry(key, value?.toString() ?? ''),
+    );
   }
 
   String _academicTypePayload() {
