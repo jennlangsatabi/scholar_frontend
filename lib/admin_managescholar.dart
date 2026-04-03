@@ -274,6 +274,29 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     }
   }
 
+  Future<void> _archiveScholar(String userId) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      final data = await BackendApi.postForm(
+        'archive_scholar.php',
+        body: {"user_id": userId},
+      );
+
+      if (data['status'] == 'success') {
+        _toast('Scholar archived.', const Color(0xFF8E4B10));
+        await fetchScholars();
+      } else {
+        _toast(data['message']?.toString() ?? 'Archive failed.',
+            Colors.redAccent);
+      }
+    } catch (e) {
+      _toast('Error archiving scholar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   void _toast(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -636,6 +659,43 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       decoration: _modalInputDecoration(label),
       obscureText: obscureText,
       keyboardType: keyboardType,
+    );
+  }
+
+  void _showArchiveConfirmation(String userId, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          "Archive Scholar",
+          style: TextStyle(
+            color: Color(0xFF8E4B10),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "Archive $name?\n\nArchived scholars can't log in, but their records remain in the system.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8E4B10),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              _archiveScholar(userId);
+            },
+            child: const Text(
+              "Archive",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1068,6 +1128,17 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           },
           icon: const Icon(Icons.edit, size: 18),
           label: const Text('Edit'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => _showArchiveConfirmation(
+            (scholar['user_id'] ?? '').toString(),
+            name,
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF8E4B10),
+          ),
+          icon: const Icon(Icons.archive_outlined, size: 18),
+          label: const Text('Archive'),
         ),
         OutlinedButton.icon(
           onPressed: () => _showDeleteConfirmation(
