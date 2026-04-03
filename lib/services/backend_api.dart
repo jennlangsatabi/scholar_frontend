@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -5,11 +6,15 @@ import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
 class BackendApi {
+  static const Duration _requestTimeout = Duration(seconds: 20);
+
   static Future<Map<String, dynamic>> getJson(
     String path, {
     Map<String, dynamic>? query,
   }) async {
-    final response = await http.get(ApiConfig.uri(path, query));
+    final response = await http
+        .get(ApiConfig.uri(path, query))
+        .timeout(_requestTimeout);
     return _decodeMap(response);
   }
 
@@ -17,7 +22,9 @@ class BackendApi {
     String path, {
     Map<String, String>? body,
   }) async {
-    final response = await http.post(ApiConfig.uri(path), body: body);
+    final response = await http
+        .post(ApiConfig.uri(path), body: body)
+        .timeout(_requestTimeout);
     return _decodeMap(response);
   }
 
@@ -25,11 +32,13 @@ class BackendApi {
     String path, {
     Map<String, dynamic>? body,
   }) async {
-    final response = await http.post(
-      ApiConfig.uri(path),
-      headers: const {'Content-Type': 'application/json'},
-      body: json.encode(body ?? const <String, dynamic>{}),
-    );
+    final response = await http
+        .post(
+          ApiConfig.uri(path),
+          headers: const {'Content-Type': 'application/json'},
+          body: json.encode(body ?? const <String, dynamic>{}),
+        )
+        .timeout(_requestTimeout);
     return _decodeMap(response);
   }
 
@@ -37,7 +46,9 @@ class BackendApi {
     String path, {
     Map<String, dynamic>? query,
   }) async {
-    final response = await http.get(ApiConfig.uri(path, query));
+    final response = await http
+        .get(ApiConfig.uri(path, query))
+        .timeout(_requestTimeout);
     return _decodeList(response);
   }
 

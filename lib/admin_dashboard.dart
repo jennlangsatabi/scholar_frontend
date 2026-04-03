@@ -14,7 +14,8 @@ class AdminDashboardView extends StatefulWidget {
 
 class _AdminDashboardViewState extends State<AdminDashboardView>
     with WidgetsBindingObserver {
-  static const _pollInterval = Duration(seconds: 5);
+  static const _pollInterval = Duration(seconds: 20);
+  static const _scholarDirectoryTtl = Duration(minutes: 2);
 
   String selectedScholarType = 'Student Assistant';
   Map<String, String> currentStats = {
@@ -25,6 +26,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
 
   List<Map<String, dynamic>> recentSubmissions = [];
   Map<int, String> _scholarNameByUserId = {};
+  DateTime? _scholarDirectoryFetchedAt;
   bool isLoading = true;
   bool isRefreshing = false;
   String? errorMessage;
@@ -66,7 +68,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
     });
 
     try {
-      await _fetchScholarDirectory();
+      await _ensureScholarDirectory();
 
       final uri = ApiConfig.uri('get_admin_stats.php', {
         'scholar_type': selectedScholarType,
@@ -192,9 +194,20 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
       }
 
       _scholarNameByUserId = map;
+      _scholarDirectoryFetchedAt = DateTime.now();
     } catch (_) {
       // Keep existing map if lookup fails.
     }
+  }
+
+  Future<void> _ensureScholarDirectory({bool force = false}) async {
+    if (!force &&
+        _scholarDirectoryFetchedAt != null &&
+        DateTime.now().difference(_scholarDirectoryFetchedAt!) <
+            _scholarDirectoryTtl) {
+      return;
+    }
+    await _fetchScholarDirectory();
   }
 
   String _lastUpdatedLabel() {
