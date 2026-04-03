@@ -15,6 +15,10 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _middleNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _courseController = TextEditingController();
   final TextEditingController _yearLevelController = TextEditingController();
   final TextEditingController _assignedAreaController = TextEditingController();
@@ -50,6 +54,9 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     _firstNameController.dispose();
     _middleNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _courseController.dispose();
     _yearLevelController.dispose();
     _assignedAreaController.dispose();
@@ -114,9 +121,28 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
 
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty ||
         _courseController.text.trim().isEmpty ||
         _yearLevelController.text.trim().isEmpty) {
       _toast('Please complete required fields.', Colors.orange);
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    final emailOk = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    if (!emailOk) {
+      _toast('Please enter a valid email address.', Colors.orange);
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      _toast('Password must be at least 6 characters.', Colors.orange);
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _toast('Passwords do not match.', Colors.orange);
       return;
     }
 
@@ -126,6 +152,11 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         "first_name": _firstNameController.text.trim(),
         "middle_name": _middleNameController.text.trim(),
         "last_name": _lastNameController.text.trim(),
+        "email": email,
+        "password": _passwordController.text,
+        "username":
+            "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}"
+                .trim(),
         "school": "JMC",
         "course": _courseController.text.trim(),
         "year_level": _yearLevelController.text.trim(),
@@ -261,6 +292,9 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     _firstNameController.clear();
     _middleNameController.clear();
     _lastNameController.clear();
+    _emailController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
     _courseController.clear();
     _yearLevelController.clear();
     _assignedAreaController.clear();
@@ -385,6 +419,45 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                                 controller: _lastNameController,
                                 label: 'Last Name*',
                               ),
+                              const SizedBox(height: 10),
+                              _modalField(
+                                controller: _emailController,
+                                label: 'Email*',
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 10),
+                              if (isCompact) ...[
+                                _modalField(
+                                  controller: _passwordController,
+                                  label: 'Password*',
+                                  obscureText: true,
+                                ),
+                                const SizedBox(height: 10),
+                                _modalField(
+                                  controller: _confirmPasswordController,
+                                  label: 'Confirm Password*',
+                                  obscureText: true,
+                                ),
+                              ] else
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _modalField(
+                                        controller: _passwordController,
+                                        label: 'Password*',
+                                        obscureText: true,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _modalField(
+                                        controller: _confirmPasswordController,
+                                        label: 'Confirm Password*',
+                                        obscureText: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               const SizedBox(height: 10),
                             ],
                             DropdownButtonFormField<String>(
@@ -555,10 +628,14 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   Widget _modalField({
     required TextEditingController controller,
     required String label,
+    bool obscureText = false,
+    TextInputType? keyboardType,
   }) {
     return TextField(
       controller: controller,
       decoration: _modalInputDecoration(label),
+      obscureText: obscureText,
+      keyboardType: keyboardType,
     );
   }
 

@@ -1155,10 +1155,14 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
     final categorySummary = ignoreCategory ? _categorySummary(filtered) : null;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontalPadding = constraints.maxWidth < 700 ? 16.0 : 40.0;
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: Column(
+            children: [
           if (titleOverride != null)
             Align(
               alignment: Alignment.centerLeft,
@@ -1213,10 +1217,10 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           ),
           const SizedBox(height: 15),
           Expanded(
-            child: Column(
+            child: ListView(
+              padding: EdgeInsets.zero,
               children: [
-                Expanded(
-                  child: Container(
+                Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                         color: Colors.white,
@@ -1229,81 +1233,120 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                         ]),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SingleChildScrollView(
-                          child: DataTable(
-                            headingRowColor:
-                                WidgetStateProperty.all(const Color(0xFFF8F5FB)),
-                            columnSpacing: 30,
-                            headingRowHeight: 70,
-                            dataRowHeight: 65,
-                            columns: [
-                              const DataColumn(
-                                  label: Text('Scholar Name',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              const DataColumn(
-                                  label: Text('Course/Year',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              DataColumn(
-                                label: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Due Date',
-                                      overflow: TextOverflow.ellipsis,
+                      child: LayoutBuilder(
+                        builder: (context, tableConstraints) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: tableConstraints.maxWidth,
+                              ),
+                              child: DataTable(
+                                headingRowColor: WidgetStateProperty.all(
+                                  const Color(0xFFF8F5FB),
+                                ),
+                                columnSpacing: 30,
+                                headingRowHeight: 70,
+                                dataRowHeight: 65,
+                                columns: [
+                                  const DataColumn(
+                                    label: Text(
+                                      'Scholar Name',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    IconButton(
-                                      tooltip: 'Edit Due Dates',
-                                      icon: const Icon(Icons.edit_calendar,
-                                          size: 18, color: Color(0xFF6A1B9A)),
-                                      onPressed: _showDueDateDialog,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 28,
-                                        minHeight: 28,
+                                  ),
+                                  const DataColumn(
+                                    label: Text(
+                                      'Course/Year',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Due Date',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        IconButton(
+                                          tooltip: 'Edit Due Dates',
+                                          icon: const Icon(
+                                            Icons.edit_calendar,
+                                            size: 18,
+                                            color: Color(0xFF6A1B9A),
+                                          ),
+                                          onPressed: _showDueDateDialog,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                            minWidth: 28,
+                                            minHeight: 28,
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (showDutyHours) ...[
+                                    const DataColumn(
+                                      label: Text(
+                                        'Supervisor',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const DataColumn(
+                                      label: Text(
+                                        'Duty Hours',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   ],
-                                ),
+                                  const DataColumn(
+                                    label: Text(
+                                      'Grades',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const DataColumn(
+                                    label: Text(
+                                      'Renewal',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const DataColumn(
+                                    label: Text(
+                                      'Remarks',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                rows: scholarRows,
                               ),
-                              if (showDutyHours) ...[
-                                const DataColumn(
-                                    label: Text('Supervisor',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                                const DataColumn(
-                                    label: Text('Duty Hours',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                              ],
-                              const DataColumn(
-                                  label: Text('Grades',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              const DataColumn(
-                                  label: Text('Renewal',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              const DataColumn(
-                                  label: Text('Remarks',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                            ],
-                            rows: scholarRows,
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
                 ),
                 if (showVarsityDetails) ...[
                   const SizedBox(height: 18),
@@ -1322,7 +1365,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           ),
           _buildBottomBackButton(backTarget ?? parentView),
         ],
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1899,7 +1944,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth < 720 ? 720 : constraints.maxWidth,
+                ),
                 child: Table(
                   columnWidths: const {
                     0: FlexColumnWidth(1.2),
@@ -2162,7 +2209,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth < 720 ? 720 : constraints.maxWidth,
+                ),
                 child: Table(
                   columnWidths: const {
                     0: FlexColumnWidth(1.3),

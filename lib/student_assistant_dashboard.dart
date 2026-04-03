@@ -192,60 +192,104 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
         decoration: BoxDecoration(
           color: const Color(0xFF2D0D44).withOpacity(0.82),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.handyman_rounded,
-                  color: Colors.white, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tight = constraints.maxWidth < 520;
+            final iconBox = tight ? 44.0 : 54.0;
+            final iconSize = tight ? 24.0 : 28.0;
+            final titleSize = tight ? 20.0 : 26.0;
+            final spacing = tight ? 12.0 : 16.0;
+
+            final headerBody = Row(
+              children: [
+                Container(
+                  width: iconBox,
+                  height: iconBox,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.handyman_rounded,
+                    color: Colors.white,
+                    size: iconSize,
+                  ),
+                ),
+                SizedBox(width: spacing),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Student Assistant Dashboard",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Track your hours, submissions, and duty updates in real time.",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      if (_lastUpdated != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          "Last updated ${_formatTime(_lastUpdated!)}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+
+            final refreshButton = tight
+                ? Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      tooltip: 'Refresh',
+                      onPressed: fetchData,
+                      icon: const Icon(Icons.refresh_rounded),
+                      color: Colors.white,
+                    ),
+                  )
+                : TextButton.icon(
+                    onPressed: fetchData,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Refresh'),
+                  );
+
+            if (tight) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Student Assistant Dashboard",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Track your hours, submissions, and duty updates in real time.",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  if (_lastUpdated != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      "Last updated ${_formatTime(_lastUpdated!)}",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  headerBody,
+                  const SizedBox(height: 8),
+                  refreshButton,
                 ],
-              ),
-            ),
-            TextButton.icon(
-              onPressed: fetchData,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Refresh'),
-            ),
-          ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: headerBody),
+                refreshButton,
+              ],
+            );
+          },
         ),
       ),
     );

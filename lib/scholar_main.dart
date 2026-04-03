@@ -44,6 +44,8 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
   int? _openAnnouncementId;
   Timer? _toastTimer;
 
+  static const double _drawerBreakpoint = 900;
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +64,9 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
       final items = await BackendApi.unwrapList(
         BackendApi.getJson(
           'get_notifications.php',
-          query: {'user_id': widget.userId},
+          query: {'user_id': widget.userId, 'limit': '80'},
+          cacheTtl: const Duration(seconds: 8),
+          retries: 1,
         ),
       );
       final unreadItems = items.where((item) {
@@ -217,65 +221,83 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // The background color for the main content area
-      backgroundColor: const Color(0xFFF3E5F5),
-      body: Row(
-        children: [
-          // --- SIDEBAR (Fixed Width) ---
-          _buildSidebar(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useDrawer = constraints.maxWidth < _drawerBreakpoint;
 
-          // --- MAIN CONTENT (Dynamic Width) ---
-          Expanded(
-            child: Stack(
-              children: [
-                Column(
-                  children: [
-                    _buildWelcomeHeader("Welcome, ${widget.username}!"),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: _getPageContent(),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_announcementToast != null)
-                  Positioned(
-                    top: 14,
-                    right: 16,
-                    child: _AnnouncementToast(
-                      title: _announcementTitleFromMessage(
-                        (_announcementToast!['message'] ?? '').toString(),
-                      ),
-                      onClose: () {
-                        if (!mounted) return;
-                        setState(() => _announcementToast = null);
-                      },
-                      onView: () {
-                        final id = _announcementIdFromMessage(
-                          (_announcementToast!['message'] ?? '').toString(),
-                        );
-                        if (id != null) {
-                          setState(() {
-                            _openAnnouncementId = id;
-                            activePage = 'Notification';
-                            _announcementToast = null;
-                          });
-                        } else {
-                          setState(() {
-                            activePage = 'Notification';
-                            _announcementToast = null;
-                          });
-                        }
-                      },
+        Widget buildMainContent({VoidCallback? onOpenMenu}) {
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  _buildWelcomeHeader(
+                    "Welcome, ${widget.username}!",
+                    showMenu: useDrawer,
+                    onMenuPressed: onOpenMenu,
+                  ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _getPageContent(),
                     ),
                   ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                ],
+              ),
+              if (_announcementToast != null)
+                Positioned(
+                  top: 14,
+                  right: 16,
+                  child: _AnnouncementToast(
+                    title: _announcementTitleFromMessage(
+                      (_announcementToast!['message'] ?? '').toString(),
+                    ),
+                    onClose: () {
+                      if (!mounted) return;
+                      setState(() => _announcementToast = null);
+                    },
+                    onView: () {
+                      final id = _announcementIdFromMessage(
+                        (_announcementToast!['message'] ?? '').toString(),
+                      );
+                      if (id != null) {
+                        setState(() {
+                          _openAnnouncementId = id;
+                          activePage = 'Notification';
+                          _announcementToast = null;
+                        });
+                      } else {
+                        setState(() {
+                          activePage = 'Notification';
+                          _announcementToast = null;
+                        });
+                      }
+                    },
+                  ),
+                ),
+            ],
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF3E5F5),
+          drawerEnableOpenDragGesture: true,
+          drawer: useDrawer
+              ? Drawer(child: _buildSidebarContent(isDrawer: true))
+              : null,
+          body: useDrawer
+              ? Builder(
+                  builder: (scaffoldContext) => buildMainContent(
+                    onOpenMenu: () => Scaffold.of(scaffoldContext).openDrawer(),
+                  ),
+                )
+              : Row(
+                  children: [
+                    _buildSidebar(),
+                    Expanded(child: buildMainContent()),
+                  ],
+                ),
+        );
+      },
     );
   }
 
@@ -284,14 +306,22 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
     return Container(
       width: 260,
       color: const Color(0xFF3B125A),
+      child: _buildSidebarContent(isDrawer: false),
+    );
+  }
+
+  Widget _buildSidebarContent({required bool isDrawer}) {
+    final content = Container(
+      color: const Color(0xFF3B125A),
       child: Column(
         children: [
-          const SizedBox(height: 40),
-          // Logo Section
+          SizedBox(height: isDrawer ? 20 : 40),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
-                color: Colors.white, shape: BoxShape.circle),
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
             child: Image.asset(
               'assets/jmclogo.png',
               height: 60,
@@ -305,32 +335,44 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
             'Scholar\nManagement',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 40),
-
-          // Sidebar Menu Items
+          const SizedBox(height: 24),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _navItem(Icons.grid_view_rounded, 'Dashboard'),
-                _navItem(Icons.person_outline, 'Profile'),
-                _navItem(Icons.upload_file, 'Upload Files'),
-                _navItem(Icons.notifications_none, 'Notification'),
+                _navItem(Icons.grid_view_rounded, 'Dashboard',
+                    closeDrawer: isDrawer),
+                _navItem(Icons.person_outline, 'Profile', closeDrawer: isDrawer),
+                _navItem(Icons.upload_file, 'Upload Files',
+                    closeDrawer: isDrawer),
+                _navItem(Icons.notifications_none, 'Notification',
+                    closeDrawer: isDrawer),
               ],
             ),
           ),
           const Divider(color: Colors.white24, indent: 20, endIndent: 20),
-          _navItem(Icons.logout, 'Logout', isLogout: true),
+          _navItem(Icons.logout, 'Logout',
+              isLogout: true, closeDrawer: isDrawer),
           _buildSystemUserSection(),
         ],
       ),
     );
+
+    return isDrawer ? SafeArea(child: content) : content;
   }
 
   /// --- NAVIGATION ITEM BUILDER ---
-  Widget _navItem(IconData icon, String label, {bool isLogout = false}) {
+  Widget _navItem(
+    IconData icon,
+    String label, {
+    bool isLogout = false,
+    bool closeDrawer = false,
+  }) {
     bool isActive = activePage == label;
     return ListTile(
       // Highlight the active menu item
@@ -345,6 +387,9 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
         ),
       ),
       onTap: () {
+        if (closeDrawer) {
+          Navigator.of(context).pop();
+        }
         if (isLogout) {
           widget.onLogout();
         } else {
@@ -399,28 +444,70 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
   }
 
   /// --- HEADER WIDGET ---
-  Widget _buildWelcomeHeader(String msg) {
-    return Container(
-      height: 110,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/jmcbg.jpg'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        color: const Color(0xFF9C27B0).withOpacity(0.7), // Purple overlay
-        padding: const EdgeInsets.only(left: 25, top: 35),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          msg,
-          style: const TextStyle(
-              color: Color(0xFFFFEB3B), // Yellow text for visibility
-              fontSize: 28,
-              fontWeight: FontWeight.bold),
-        ),
-      ),
+  Widget _buildWelcomeHeader(
+    String msg, {
+    bool showMenu = false,
+    VoidCallback? onMenuPressed,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        final fontSize = compact ? 20.0 : 28.0;
+        final topPadding = compact ? 18.0 : 35.0;
+        final menuInset = showMenu ? 48.0 : 0.0;
+        final leftPadding = (compact ? 16.0 : 25.0) + menuInset;
+
+        return Container(
+          height: 110,
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/jmcbg.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Container(
+            color: const Color(0xFF9C27B0).withOpacity(0.7),
+            child: SafeArea(
+              bottom: false,
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: leftPadding, top: topPadding),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        msg,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: const Color(0xFFFFEB3B),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (showMenu)
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: IconButton(
+                            icon: const Icon(Icons.menu, color: Colors.white),
+                            tooltip: 'Menu',
+                            onPressed: onMenuPressed,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

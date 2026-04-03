@@ -461,8 +461,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text('Reply to ${_titleOf(item)}'),
-          content: SizedBox(
-            width: 440,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,42 +974,67 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildSummary(int unread, int read) {
-    return Row(
-      children: [
-        Expanded(
-          child: _summaryCard(
-            'Total',
-            _items.length.toString(),
-            const Color(0xFF5B2C83),
-            Icons.inbox_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _summaryCard(
-            'Unread',
-            unread.toString(),
-            const Color(0xFFE08A00),
-            Icons.mark_email_unread_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _summaryCard(
-            'Read',
-            read.toString(),
-            const Color(0xFF1F7A55),
-            Icons.mark_email_read_rounded,
-          ),
-        ),
-      ],
+    final cards = [
+      _summaryCard(
+        'Total',
+        _items.length.toString(),
+        const Color(0xFF5B2C83),
+        Icons.inbox_rounded,
+      ),
+      _summaryCard(
+        'Unread',
+        unread.toString(),
+        const Color(0xFFE08A00),
+        Icons.mark_email_unread_rounded,
+      ),
+      _summaryCard(
+        'Read',
+        read.toString(),
+        const Color(0xFF1F7A55),
+        Icons.mark_email_read_rounded,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 560;
+        if (!compact) {
+          return Row(
+            children: [
+              Expanded(child: cards[0]),
+              const SizedBox(width: 12),
+              Expanded(child: cards[1]),
+              const SizedBox(width: 12),
+              Expanded(child: cards[2]),
+            ],
+          );
+        }
+
+        final width = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(width: width, child: cards[0]),
+            SizedBox(width: width, child: cards[1]),
+            SizedBox(width: width, child: cards[2]),
+          ],
+        );
+      },
     );
   }
 
   Widget _summaryCard(
       String label, String value, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(18),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tight = constraints.maxWidth < 220;
+        final padding = tight ? 12.0 : 18.0;
+        final iconSize = tight ? 38.0 : 42.0;
+        final valueSize = tight ? 20.0 : 24.0;
+
+        return Container(
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1018,8 +1043,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: iconSize,
+            height: iconSize,
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(14),
@@ -1027,29 +1052,37 @@ class _NotificationScreenState extends State<NotificationScreen> {
             child: Icon(icon, color: color),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w700,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFF2B1A3A),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: const Color(0xFF2B1A3A),
+                    fontSize: valueSize,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
+    );
+      },
     );
   }
 

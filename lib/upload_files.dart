@@ -379,36 +379,49 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
                 const SizedBox(height: 24),
                 _buildScannerFrame(),
                 const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(
-                        'Document Type',
-                        selectedDocType,
-                        const [
-                          'Report of Grades',
-                          'Renewal Letter',
-                          'Enrollment Form',
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 640;
+                    final docType = _buildDropdown(
+                      'Document Type',
+                      selectedDocType,
+                      const [
+                        'Report of Grades',
+                        'Renewal Letter',
+                        'Enrollment Form',
+                      ],
+                      (value) => setState(() => selectedDocType = value!),
+                    );
+                    final term = _buildDropdown(
+                      'Academic Term',
+                      selectedAcademicTerm,
+                      const [
+                        'AY 2025-2026 1st Semester',
+                        'AY 2025-2026 2nd Semester',
+                        'Summer 2026',
+                      ],
+                      (value) => setState(() => selectedAcademicTerm = value!),
+                    );
+
+                    if (compact) {
+                      return Column(
+                        children: [
+                          docType,
+                          const SizedBox(height: 16),
+                          term,
                         ],
-                        (value) => setState(() => selectedDocType = value!),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdown(
-                        'Academic Term',
-                        selectedAcademicTerm,
-                        const [
-                          'AY 2025-2026 1st Semester',
-                          'AY 2025-2026 2nd Semester',
-                          'Summer 2026',
-                        ],
-                        (value) =>
-                            setState(() => selectedAcademicTerm = value!),
-                      ),
-                    ),
-                  ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: docType),
+                        const SizedBox(width: 16),
+                        Expanded(child: term),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildRemarksField(),

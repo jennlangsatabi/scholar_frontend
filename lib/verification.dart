@@ -265,25 +265,122 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 16),
-            if (!isLoading && errorMessage.isEmpty) _buildSummary(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : errorMessage.isNotEmpty
-                      ? _buildErrorState()
-                      : pendingDocs.isEmpty
-                          ? _buildEmptyState()
-                          : _buildVerificationList(),
+      body: RefreshIndicator(
+        onRefresh: fetchPendingDocuments,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverToBoxAdapter(child: _buildHeader()),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            if (!isLoading && errorMessage.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverToBoxAdapter(child: _buildSummary()),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: _buildContentSliver(),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContentSliver() {
+    if (isLoading) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (errorMessage.isNotEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildErrorState(),
+      );
+    }
+
+    if (pendingDocs.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildEmptyState(),
+      );
+    }
+
+    return _buildVerificationSliverList();
+  }
+
+  Widget _buildVerificationSliverList() {
+    final itemCount = pendingDocs.isEmpty ? 0 : pendingDocs.length * 2 - 1;
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index.isOdd) {
+            return const SizedBox(height: 12);
+          }
+          final docIndex = index ~/ 2;
+          final doc = pendingDocs[docIndex];
+          final imageUrl = _resolveImageUrl(doc);
+          final status = (doc['admin_status'] ?? 'Pending').toString();
+          final docId = (doc['id'] ?? '').toString();
+
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 900;
+                final content = [
+                  _buildThumbnail(
+                    imageUrl,
+                    onTap: () => _showFilePreview(doc),
+                  ),
+                  const SizedBox(width: 14, height: 14),
+                  Expanded(child: _buildDocMeta(doc, status)),
+                  const SizedBox(width: 14, height: 14),
+                  _buildActions(docId),
+                ];
+
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildThumbnail(
+                        imageUrl,
+                        onTap: () => _showFilePreview(doc),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDocMeta(doc, status),
+                      const SizedBox(height: 12),
+                      _buildActions(docId),
+                    ],
+                  );
+                }
+
+                return Row(children: content);
+              },
+            ),
+          );
+        },
+        childCount: itemCount,
       ),
     );
   }
@@ -544,60 +641,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 
-  Widget _buildVerificationList() {
-    return ListView.separated(
-      itemCount: pendingDocs.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final doc = pendingDocs[index];
-        final imageUrl = _resolveImageUrl(doc);
-        final status = (doc['admin_status'] ?? 'Pending').toString();
-        final docId = (doc['id'] ?? '').toString();
-
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 900;
-              final content = [
-                _buildThumbnail(imageUrl, onTap: () => _showFilePreview(doc)),
-                const SizedBox(width: 14, height: 14),
-                Expanded(child: _buildDocMeta(doc, status)),
-                const SizedBox(width: 14, height: 14),
-                _buildActions(docId),
-              ];
-
-              if (compact) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildThumbnail(imageUrl, onTap: () => _showFilePreview(doc)),
-                    const SizedBox(height: 12),
-                    _buildDocMeta(doc, status),
-                    const SizedBox(height: 12),
-                    _buildActions(docId),
-                  ],
-                );
-              }
-
-              return Row(children: content);
-            },
-          ),
-        );
-      },
-    );
-  }
+  // Old ListView-based layout replaced by a sliver list so the entire module
+  // (header + summary + list) scrolls correctly inside the admin shell.
 
   Widget _buildThumbnail(String imageUrl, {required VoidCallback onTap}) {
     return InkWell(

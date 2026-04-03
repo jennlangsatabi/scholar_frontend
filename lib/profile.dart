@@ -500,8 +500,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Edit Profile'),
-        content: SizedBox(
-          width: 520,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
           child: SingleChildScrollView(
             child: Column(
               children: [
