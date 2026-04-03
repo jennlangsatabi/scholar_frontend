@@ -129,6 +129,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         "course": _courseController.text.trim(),
         "year_level": _yearLevelController.text.trim(),
         "scholarship_category": _toServerCategory(_selectedFormCategory),
+        "scholarship_status": _initialScholarshipStatusPayload(),
+        "status": _initialScholarshipStatusPayload(),
         "assigned_area": _selectedFormCategory == 'Student Assistant'
             ? _assignedAreaController.text.trim()
             : '',
@@ -1140,6 +1142,11 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       default:
         return 'student_assistant';
     }
+  }
+
+  String _initialScholarshipStatusPayload() {
+    // Deployed PHP expects a short status value for inserts.
+    return 'Pending';
   }
 
   String _academicTypePayload() {

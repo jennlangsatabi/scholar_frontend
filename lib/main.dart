@@ -106,121 +106,122 @@ class _MainPortalPageState extends State<MainPortalPage> {
           ),
 
           // Center Branded Glass Card
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  width: 480,
-                  constraints: const BoxConstraints(
-                    maxWidth: 900,
-                    maxHeight: 560,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 26,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF9C27B0).withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
-                        blurRadius: 25,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final content = Column(
-                        key: ValueKey<String>(currentState.toString()),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (currentState == PortalState.roleSelection)
-                            RoleSelectionScreen(
-                              key: const ValueKey('RoleSelect'),
-                              onRoleSelected: (role) {
-                                setState(() {
-                                  selectedRole = role;
-                                  currentState = PortalState.login;
-                                });
-                              },
-                            )
-                          else
-                            (selectedRole == 'Admin'
-                                ? AdminLoginScreen(
-                                    key: const ValueKey('AdminLogin'),
-                                    onLoginSuccess: (userData) {
-                                      setState(() {
-                                        // userData should be a Map from your login PHP
-                                        currentUserId =
-                                            userData['id'].toString();
-                                        currentAdminName =
-                                            userData['name']?.toString() ??
-                                                'Administrator';
-                                        currentState =
-                                            PortalState.adminDashboard;
-                                      });
-                                    },
-                                    onBack: () => setState(() => currentState =
-                                        PortalState.roleSelection),
-                                  )
-                                : ScholarLoginScreen(
-                                    key: const ValueKey('ScholarLogin'),
-                                    onLoginSuccess: (userData) {
-                                      setState(() {
-                                        currentUserId =
-                                            userData['id'].toString();
-                                        currentUsername =
-                                            userData['name']?.toString() ??
-                                                "Scholar";
-                                        selectedScholarType =
-                                            userData['type']?.toString() ??
-                                                "Student Assistant Scholar";
-                                        currentScholarCategory =
-                                            userData['type']?.toString() ?? '';
-                                        currentState =
-                                            userData['role'] == 'admin'
-                                                ? PortalState.adminDashboard
-                                                : PortalState.scholarDashboard;
-                                      });
-                                    },
-                                    onBack: () => setState(() => currentState =
-                                        PortalState.roleSelection),
-                                  )),
-                          if (currentState == PortalState.roleSelection) ...[
-                            const SizedBox(height: 18),
-                            _GlassActionButton(
-                              label: 'Evaluation Form',
-                              icon: Icons.assignment_turned_in_rounded,
-                              onTap: () => setState(() =>
-                                  currentState = PortalState.evaluationForm),
-                            ),
-                          ],
-                        ],
-                      );
+          LayoutBuilder(
+            builder: (context, viewport) {
+              final isCompact = viewport.maxWidth < 600;
+              final cardWidth = isCompact ? viewport.maxWidth - 32 : 480.0;
+              final horizontalPadding = isCompact ? 24.0 : 32.0;
+              final verticalPadding = isCompact ? 22.0 : 26.0;
 
-                      return SizedBox(
-                        height: constraints.maxHeight,
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: content,
+              final content = Column(
+                key: ValueKey<String>(currentState.toString()),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (currentState == PortalState.roleSelection)
+                    RoleSelectionScreen(
+                      key: const ValueKey('RoleSelect'),
+                      onRoleSelected: (role) {
+                        setState(() {
+                          selectedRole = role;
+                          currentState = PortalState.login;
+                        });
+                      },
+                    )
+                  else
+                    (selectedRole == 'Admin'
+                        ? AdminLoginScreen(
+                            key: const ValueKey('AdminLogin'),
+                            onLoginSuccess: (userData) {
+                              setState(() {
+                                currentUserId = userData['id'].toString();
+                                currentAdminName =
+                                    userData['name']?.toString() ??
+                                        'Administrator';
+                                currentState = PortalState.adminDashboard;
+                              });
+                            },
+                            onBack: () => setState(
+                                () => currentState = PortalState.roleSelection),
+                          )
+                        : ScholarLoginScreen(
+                            key: const ValueKey('ScholarLogin'),
+                            onLoginSuccess: (userData) {
+                              setState(() {
+                                currentUserId = userData['id'].toString();
+                                currentUsername =
+                                    userData['name']?.toString() ?? "Scholar";
+                                selectedScholarType =
+                                    userData['type']?.toString() ??
+                                        "Student Assistant Scholar";
+                                currentScholarCategory =
+                                    userData['type']?.toString() ?? '';
+                                currentState = userData['role'] == 'admin'
+                                    ? PortalState.adminDashboard
+                                    : PortalState.scholarDashboard;
+                              });
+                            },
+                            onBack: () => setState(
+                                () => currentState = PortalState.roleSelection),
+                          )),
+                  if (currentState == PortalState.roleSelection) ...[
+                    const SizedBox(height: 18),
+                    _GlassActionButton(
+                      label: 'Evaluation Form',
+                      icon: Icons.assignment_turned_in_rounded,
+                      onTap: () =>
+                          setState(() => currentState = PortalState.evaluationForm),
+                    ),
+                  ],
+                ],
+              );
+
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: cardWidth,
+                          maxHeight: viewport.maxHeight - 32,
+                        ),
+                        child: Container(
+                          width: cardWidth,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                            vertical: verticalPadding,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF9C27B0).withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 25,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: content,
+                            ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
