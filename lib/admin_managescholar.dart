@@ -139,10 +139,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         "gift_type": giftType,
       };
 
-      final data = await BackendApi.postForm(
-        'add_scholar.php',
-        body: _stringifyPayload(payload),
-      );
+      final data = await _createScholarWithStatusFallback(payload);
 
       if (data['status'] == 'success') {
         setState(() => _selectedFilterCategory = _selectedFormCategory);
@@ -1149,6 +1146,51 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   String _initialScholarshipStatusPayload() {
     // Deployed PHP validates this value against allowed scholarship states.
     return 'Active';
+  }
+
+  Future<Map<String, dynamic>> _createScholarWithStatusFallback(
+    Map<String, dynamic> payload,
+  ) async {
+    final candidates = <String>[
+      _initialScholarshipStatusPayload(),
+      'Approved',
+      'Under Verification',
+      'under_verification',
+      'approved',
+      'Pending',
+      'pending',
+      'Terminated',
+      'terminated',
+      'Active',
+      'active',
+    ];
+
+    Map<String, dynamic> lastResponse = const {};
+
+    for (final status in candidates) {
+      final body = Map<String, dynamic>.from(payload)
+        ..['scholarship_status'] = status
+        ..['status'] = status;
+
+      final response = await BackendApi.postForm(
+        'add_scholar.php',
+        body: _stringifyPayload(body),
+      );
+      lastResponse = response;
+
+      if ((response['status'] ?? '').toString().toLowerCase() == 'success') {
+        return response;
+      }
+
+      final message = (response['message'] ?? response['error'] ?? '')
+          .toString()
+          .toLowerCase();
+      if (!message.contains('invalid scholarship status')) {
+        return response;
+      }
+    }
+
+    return lastResponse;
   }
 
   Map<String, String> _stringifyPayload(Map<String, dynamic> payload) {
