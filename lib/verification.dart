@@ -12,8 +12,6 @@ class VerificationScreen extends StatefulWidget {
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  final String imageBaseUrl = "${ApiConfig.baseUrl}/";
-
   List<Map<String, dynamic>> pendingDocs = [];
   Map<int, String> _scholarNameByUserId = {};
   bool isLoading = true;
@@ -265,12 +263,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     for (final raw in candidates) {
       final value = raw?.toString().trim() ?? '';
       if (value.isEmpty) continue;
-      if (value.startsWith('http://') || value.startsWith('https://')) {
-        return value;
-      }
-      final normalized =
-          value.replaceAll('\\', '/').replaceFirst(RegExp(r'^/?'), '');
-      return Uri.encodeFull("$imageBaseUrl$normalized");
+      return Uri.encodeFull(ApiConfig.normalizeAssetUrl(value));
     }
 
     return '';

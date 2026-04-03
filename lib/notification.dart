@@ -112,7 +112,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
           Map<String, dynamic>.from(payload['profile'] as Map? ?? const {});
       if (!mounted) return;
       setState(() {
-        _profileImageUrl = profile['profile_image_url']?.toString();
+        _profileImageUrl = ApiConfig.normalizeAssetUrl(
+          profile['profile_image_url']?.toString(),
+        );
       });
     } catch (_) {
       // ignore

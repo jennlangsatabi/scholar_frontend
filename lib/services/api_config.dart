@@ -34,4 +34,29 @@ class ApiConfig {
       ),
     );
   }
+
+  static String normalizeAssetUrl(String? raw) {
+    final value = raw?.trim() ?? '';
+    if (value.isEmpty) {
+      return '';
+    }
+
+    final base = Uri.parse(baseUrl);
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      final parsed = Uri.tryParse(value);
+      if (parsed == null) {
+        return value;
+      }
+
+      final forcedScheme = base.scheme.isNotEmpty ? base.scheme : 'https';
+      return parsed.replace(scheme: forcedScheme).toString();
+    }
+
+    final normalizedPath = value.replaceAll('\\', '/').replaceFirst(
+      RegExp(r'^/?'),
+      '',
+    );
+    return base.resolve(normalizedPath).toString();
+  }
 }

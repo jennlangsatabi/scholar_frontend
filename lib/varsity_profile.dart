@@ -109,7 +109,9 @@ class _VarsityProfileScreenState extends State<VarsityProfileScreen> {
         middleName = profile['middle_name']?.toString() ?? '';
         lastName = profile['last_name']?.toString() ?? '';
         yearLevel = profile['year_level']?.toString() ?? '';
-        profileImageUrl = profile['profile_image_url']?.toString() ?? '';
+        profileImageUrl = ApiConfig.normalizeAssetUrl(
+          profile['profile_image_url']?.toString(),
+        );
         semesters = semesterList;
         selectedSemester = semesterList.isNotEmpty ? semesterList.first : null;
         rows = tableRows;
@@ -355,8 +357,9 @@ class _VarsityProfileScreenState extends State<VarsityProfileScreen> {
       try {
         final map = jsonDecode(body) as Map<String, dynamic>;
         setState(() {
-          profileImageUrl =
-              map['profile_image_url']?.toString() ?? profileImageUrl;
+          profileImageUrl = ApiConfig.normalizeAssetUrl(
+            map['profile_image_url']?.toString(),
+          );
         });
       } catch (_) {}
     }

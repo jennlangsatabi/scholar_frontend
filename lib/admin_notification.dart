@@ -103,7 +103,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   }
 
   String _profileImageOf(Map<String, dynamic> item) {
-    return item['profile_image_url']?.toString() ?? '';
+    return ApiConfig.normalizeAssetUrl(
+      item['profile_image_url']?.toString(),
+    );
   }
 
   String _visibilityOf(Map<String, dynamic> item) {
