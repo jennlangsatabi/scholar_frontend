@@ -587,76 +587,124 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   }
 
   Widget _buildSummary(int privateCount, int publicCount) {
-    return Row(
-      children: [
-        Expanded(
-          child: _summaryCard(
-            'Total',
-            _items.length.toString(),
-            const Color(0xFF5B2C83),
-            Icons.inbox_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _summaryCard(
-            'Admin Only',
-            privateCount.toString(),
-            const Color(0xFFE08A00),
-            Icons.lock_outline_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _summaryCard(
-            'Public',
-            publicCount.toString(),
-            const Color(0xFF1F7A55),
-            Icons.public_rounded,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const spacing = 12.0;
+        final columns = width >= 1000
+            ? 3
+            : width >= 640
+                ? 2
+                : 1;
+        final cardWidth = (width - ((columns - 1) * spacing)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                'Total',
+                _items.length.toString(),
+                const Color(0xFF5B2C83),
+                Icons.inbox_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                'Admin Only',
+                privateCount.toString(),
+                const Color(0xFFE08A00),
+                Icons.lock_outline_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                'Public',
+                publicCount.toString(),
+                const Color(0xFF1F7A55),
+                Icons.public_rounded,
+              ),
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  Color _shiftLightness(Color base, double delta) {
+    final hsl = HSLColor.fromColor(base);
+    return hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0)).toColor();
   }
 
   Widget _summaryCard(
       String label, String value, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      constraints: const BoxConstraints(minHeight: 132),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.20)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _shiftLightness(color, 0.30).withOpacity(0.55),
+            Colors.white.withOpacity(0.96),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(width: 12),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -8,
+            bottom: -10,
+            child: Opacity(
+              opacity: 0.10,
+              child: Icon(icon, size: 82, color: color),
+            ),
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withOpacity(0.18)),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(height: 12),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: color,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 value,
                 style: const TextStyle(
                   color: Color(0xFF2B1A3A),
-                  fontSize: 24,
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
+                  height: 1.0,
                 ),
               ),
             ],

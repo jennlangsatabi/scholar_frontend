@@ -344,24 +344,50 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Text(
-              "Document Verification Queue",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF2D0D44),
-              ),
-            ),
-          ),
-          FilledButton.icon(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 640;
+          final refreshButton = FilledButton.icon(
             onPressed: fetchPendingDocuments,
             icon: const Icon(Icons.refresh),
             label: const Text("Refresh"),
-          ),
-        ],
+          );
+
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Document Verification Queue",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF2D0D44),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                refreshButton,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  "Document Verification Queue",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF2D0D44),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              refreshButton,
+            ],
+          );
+        },
       ),
     );
   }
@@ -384,49 +410,146 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }).length;
     final pending = total - approved - rejected;
 
-    return Row(
-      children: [
-        _summaryCard("Total", total.toString(), const Color(0xFF5E35B1)),
-        const SizedBox(width: 12),
-        _summaryCard("Pending", pending.toString(), const Color(0xFFEF6C00)),
-        const SizedBox(width: 12),
-        _summaryCard("Approved", approved.toString(), const Color(0xFF2E7D32)),
-        const SizedBox(width: 12),
-        _summaryCard("Rejected", rejected.toString(), const Color(0xFFC62828)),
-      ],
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const spacing = 12.0;
+        final columns = width >= 1100
+            ? 4
+            : width >= 700
+                ? 2
+                : 1;
+        final cardWidth = (width - ((columns - 1) * spacing)) / columns;
 
-  Widget _summaryCard(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.25)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                "Total",
+                total.toString(),
+                const Color(0xFF5E35B1),
+                Icons.layers_rounded,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF2D0D44),
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                "Pending",
+                pending.toString(),
+                const Color(0xFFEF6C00),
+                Icons.pending_actions_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                "Approved",
+                approved.toString(),
+                const Color(0xFF2E7D32),
+                Icons.verified_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _summaryCard(
+                "Rejected",
+                rejected.toString(),
+                const Color(0xFFC62828),
+                Icons.cancel_rounded,
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Color _shiftLightness(Color base, double delta) {
+    final hsl = HSLColor.fromColor(base);
+    return hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0)).toColor();
+  }
+
+  Widget _summaryCard(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 132),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _shiftLightness(color, 0.30).withOpacity(0.55),
+            Colors.white.withOpacity(0.96),
+          ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -8,
+            bottom: -10,
+            child: Opacity(
+              opacity: 0.10,
+              child: Icon(icon, size: 82, color: color),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withOpacity(0.18)),
+                    ),
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF2D0D44),
+                  height: 1.0,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

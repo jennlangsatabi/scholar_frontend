@@ -22,6 +22,8 @@ class AdminMainSkeleton extends StatefulWidget {
 }
 
 class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
+  static const double _desktopBreakpoint = 900;
+
   // Track the current active page
   String activePage = 'Dashboard';
 
@@ -49,82 +51,94 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          // --- NAVIGATION SIDEBAR ---
-          Container(
-            width: 260,
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B125A),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black26, blurRadius: 10, offset: Offset(2, 0))
-              ],
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                // Logo Section
-                _buildSidebarLogo(),
-                const SizedBox(height: 40),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= _desktopBreakpoint;
 
-                // Scrollable Menu Items
+        return Scaffold(
+          drawer: isDesktop ? null : Drawer(child: _buildSidebarContent()),
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (isDesktop)
+                  SizedBox(
+                    width: 260,
+                    child: _buildSidebarContent(),
+                  ),
                 Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
+                  child: Column(
                     children: [
-                      _navItem(Icons.grid_view_rounded, 'Dashboard'),
-                      _navItem(Icons.group_rounded, 'Manage Scholar'),
-                      _navItem(Icons.verified_user_rounded, 'Verification'),
-                      _navItem(Icons.analytics_rounded, 'Monitoring'),
-                      // Added the notification button to the sidebar
-                      _navItem(
-                          Icons.notifications_active_rounded, 'Notifications'),
-                      _navItem(Icons.assessment_rounded, 'Reports'),
-                      _navItem(Icons.campaign_rounded, 'Announcements'),
+                      _buildHeader(isDesktop: isDesktop),
+                      Expanded(
+                        child: Container(
+                          color: const Color(0xFFF3F2F7),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder:
+                                (Widget child, Animation<double> animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: ValueKey<String>(activePage),
+                              child: _getPageContent(),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-
-                // Bottom Section: Logout & User Info
-                const Divider(color: Colors.white24, height: 1),
-                _navItem(Icons.logout_rounded, 'Logout', isLogout: true),
-                _buildAdminUserFooter(),
               ],
             ),
           ),
-
-          // --- MAIN CONTENT AREA ---
-          Expanded(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: Container(
-                    color: const Color(0xFFF3F2F7),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder:
-                          (Widget child, Animation<double> animation) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                      child: KeyedSubtree(
-                        key: ValueKey<String>(activePage),
-                        child: _getPageContent(),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   // --- UI COMPONENTS ---
+
+  Widget _buildSidebarContent() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF3B125A),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(2, 0),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          _buildSidebarLogo(),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _navItem(Icons.grid_view_rounded, 'Dashboard'),
+                _navItem(Icons.group_rounded, 'Manage Scholar'),
+                _navItem(Icons.verified_user_rounded, 'Verification'),
+                _navItem(Icons.analytics_rounded, 'Monitoring'),
+                _navItem(Icons.notifications_active_rounded, 'Notifications'),
+                _navItem(Icons.assessment_rounded, 'Reports'),
+                _navItem(Icons.campaign_rounded, 'Announcements'),
+              ],
+            ),
+          ),
+          const Divider(color: Colors.white24, height: 1),
+          _navItem(Icons.logout_rounded, 'Logout', isLogout: true),
+          _buildAdminUserFooter(),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSidebarLogo() {
     return Column(
@@ -157,9 +171,11 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader({required bool isDesktop}) {
+    final titleSize = isDesktop ? 26.0 : 20.0;
+
     return Container(
-      height: 100,
+      height: isDesktop ? 100 : 88,
       width: double.infinity,
       decoration: const BoxDecoration(
         image: DecorationImage(
@@ -169,23 +185,40 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
       ),
       child: Container(
         color: const Color(0xFF3B125A).withOpacity(0.85),
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        alignment: Alignment.centerLeft,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: EdgeInsets.symmetric(horizontal: isDesktop ? 30 : 16),
+        child: Row(
           children: [
-            Text(
-              activePage.toUpperCase(),
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 12, letterSpacing: 2),
-            ),
-            Text(
-              "Welcome, ${widget.adminName}",
-              style: const TextStyle(
-                color: Color(0xFFFFEB3B),
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+            if (!isDesktop)
+              Builder(
+                builder: (context) => IconButton(
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: const Icon(Icons.menu_rounded, color: Colors.white),
+                  tooltip: 'Open navigation',
+                ),
+              ),
+            if (!isDesktop) const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activePage.toUpperCase(),
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 12, letterSpacing: 2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    "Welcome, ${widget.adminName}",
+                    style: TextStyle(
+                      color: const Color(0xFFFFEB3B),
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],
@@ -228,6 +261,9 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
               _confirmLogout();
             } else {
               setState(() => activePage = label);
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
             }
           },
         ),

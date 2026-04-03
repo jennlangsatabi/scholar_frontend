@@ -291,152 +291,182 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                 content: SizedBox(
                   width: 560,
                   child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE7DDF2)),
-                          ),
-                          child: Text(
-                            isEdit
-                                ? 'Update course and year information.'
-                                : 'Enter scholar profile information.',
-                            style: const TextStyle(
-                              color: Color(0xFF6A5A79),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompact = constraints.maxWidth < 420;
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: const Color(0xFFE7DDF2)),
+                              ),
+                              child: Text(
+                                isEdit
+                                    ? 'Update course and year information.'
+                                    : 'Enter scholar profile information.',
+                                style: const TextStyle(
+                                  color: Color(0xFF6A5A79),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        if (!isEdit) ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _modalField(
+                            const SizedBox(height: 14),
+                            if (!isEdit) ...[
+                              if (isCompact) ...[
+                                _modalField(
                                   controller: _firstNameController,
                                   label: 'First Name*',
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _modalField(
+                                const SizedBox(height: 10),
+                                _modalField(
                                   controller: _middleNameController,
                                   label: 'Middle Name',
                                 ),
+                              ] else
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _modalField(
+                                        controller: _firstNameController,
+                                        label: 'First Name*',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _modalField(
+                                        controller: _middleNameController,
+                                        label: 'Middle Name',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              const SizedBox(height: 10),
+                              _modalField(
+                                controller: _lastNameController,
+                                label: 'Last Name*',
                               ),
+                              const SizedBox(height: 10),
                             ],
-                          ),
-                          const SizedBox(height: 10),
-                          _modalField(
-                            controller: _lastNameController,
-                            label: 'Last Name*',
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        DropdownButtonFormField<String>(
-                          value: _selectedFormCategory == 'All'
-                              ? 'Student Assistant'
-                              : _selectedFormCategory,
-                          items: _categories
-                              .where((c) => c != 'All')
-                              .map((c) =>
-                                  DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v == null) return;
-                            setDialogState(() {
-                              _selectedFormCategory = v;
-                              if (v != 'Student Assistant') {
-                                _assignedAreaController.clear();
-                              }
-                              if (v == 'Gift of Education' &&
-                                  !ScholarshipTypes.giftTypeOptions
-                                      .containsKey(_selectedGiftType)) {
-                                _selectedGiftType =
-                                    ScholarshipTypes.giftTypeOptions.keys.first;
-                              }
-                            });
-                          },
-                          decoration: _modalInputDecoration('Category'),
-                        ),
-                        const SizedBox(height: 10),
-                        if (_selectedFormCategory == 'Academic Scholar') ...[
-                          DropdownButtonFormField<String>(
-                            value: _selectedAcademicType,
-                            items: const ['Type A', 'Type B', 'Type C']
-                                .map((c) =>
-                                    DropdownMenuItem(value: c, child: Text(c)))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setDialogState(() => _selectedAcademicType = v);
-                            },
-                            decoration: _modalInputDecoration('Academic Type'),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        if (_selectedFormCategory == 'Varsity Scholar') ...[
-                          DropdownButtonFormField<String>(
-                            value: _selectedSportType,
-                            items: const ['Basketball', 'Volleyball']
-                                .map((c) =>
-                                    DropdownMenuItem(value: c, child: Text(c)))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setDialogState(() => _selectedSportType = v);
-                            },
-                            decoration: _modalInputDecoration('Sport Type'),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        if (_selectedFormCategory == 'Gift of Education') ...[
-                          DropdownButtonFormField<String>(
-                            value: _selectedGiftType,
-                            items: ScholarshipTypes.giftTypeOptions.keys
-                                .map((c) =>
-                                    DropdownMenuItem(value: c, child: Text(c)))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setDialogState(() => _selectedGiftType = v);
-                            },
-                            decoration: _modalInputDecoration('Gift Type'),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _modalField(
+                            DropdownButtonFormField<String>(
+                              value: _selectedFormCategory == 'All'
+                                  ? 'Student Assistant'
+                                  : _selectedFormCategory,
+                              items: _categories
+                                  .where((c) => c != 'All')
+                                  .map((c) => DropdownMenuItem(
+                                      value: c, child: Text(c)))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setDialogState(() {
+                                  _selectedFormCategory = v;
+                                  if (v != 'Student Assistant') {
+                                    _assignedAreaController.clear();
+                                  }
+                                  if (v == 'Gift of Education' &&
+                                      !ScholarshipTypes.giftTypeOptions
+                                          .containsKey(_selectedGiftType)) {
+                                    _selectedGiftType = ScholarshipTypes
+                                        .giftTypeOptions.keys.first;
+                                  }
+                                });
+                              },
+                              decoration: _modalInputDecoration('Category'),
+                            ),
+                            const SizedBox(height: 10),
+                            if (_selectedFormCategory == 'Academic Scholar') ...[
+                              DropdownButtonFormField<String>(
+                                value: _selectedAcademicType,
+                                items: const ['Type A', 'Type B', 'Type C']
+                                    .map((c) => DropdownMenuItem(
+                                        value: c, child: Text(c)))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v == null) return;
+                                  setDialogState(() => _selectedAcademicType = v);
+                                },
+                                decoration:
+                                    _modalInputDecoration('Academic Type'),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            if (_selectedFormCategory == 'Varsity Scholar') ...[
+                              DropdownButtonFormField<String>(
+                                value: _selectedSportType,
+                                items: const ['Basketball', 'Volleyball']
+                                    .map((c) => DropdownMenuItem(
+                                        value: c, child: Text(c)))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v == null) return;
+                                  setDialogState(() => _selectedSportType = v);
+                                },
+                                decoration: _modalInputDecoration('Sport Type'),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            if (_selectedFormCategory == 'Gift of Education') ...[
+                              DropdownButtonFormField<String>(
+                                value: _selectedGiftType,
+                                items: ScholarshipTypes.giftTypeOptions.keys
+                                    .map((c) => DropdownMenuItem(
+                                        value: c, child: Text(c)))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v == null) return;
+                                  setDialogState(() => _selectedGiftType = v);
+                                },
+                                decoration: _modalInputDecoration('Gift Type'),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            if (isCompact) ...[
+                              _modalField(
                                 controller: _courseController,
                                 label: 'Course*',
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _modalField(
+                              const SizedBox(height: 10),
+                              _modalField(
                                 controller: _yearLevelController,
                                 label: 'Year Level*',
                               ),
-                            ),
+                            ] else
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _modalField(
+                                      controller: _courseController,
+                                      label: 'Course*',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _modalField(
+                                      controller: _yearLevelController,
+                                      label: 'Year Level*',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const SizedBox(height: 10),
+                            if (_selectedFormCategory == 'Student Assistant')
+                              _modalField(
+                                controller: _assignedAreaController,
+                                label: 'Assigned Area',
+                              ),
                           ],
-                        ),
-                        const SizedBox(height: 10),
-                        if (_selectedFormCategory == 'Student Assistant')
-                          _modalField(
-                            controller: _assignedAreaController,
-                            label: 'Assigned Area',
-                          ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -560,58 +590,74 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   }
 
   Widget _buildToolbar() {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: TextField(
-            controller: _searchController,
-            onChanged: (_) => _applyFilter(),
-            decoration: InputDecoration(
-              hintText: 'Search by name, email, course, category, or area...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 900;
+        final searchField = TextField(
+          controller: _searchController,
+          onChanged: (_) => _applyFilter(),
+          decoration: InputDecoration(
+            hintText: 'Search by name, email, course, category, or area...',
+            prefixIcon: const Icon(Icons.search),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 230,
-          child: DropdownButtonFormField<String>(
-            value: _selectedFilterCategory,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+        );
+        final categoryFilter = DropdownButtonFormField<String>(
+          value: _selectedFilterCategory,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
-            items: _categories
-                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                .toList(),
-            onChanged: (v) {
-              if (v == null) return;
-              setState(() => _selectedFilterCategory = v);
-              _applyFilter();
-            },
           ),
-        ),
-        const SizedBox(width: 10),
-        FilledButton.icon(
+          items: _categories
+              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+              .toList(),
+          onChanged: (v) {
+            if (v == null) return;
+            setState(() => _selectedFilterCategory = v);
+            _applyFilter();
+          },
+        );
+        final addButton = FilledButton.icon(
           onPressed: () {
             _clearForm();
             _showFormDialog(title: 'Add New Scholar', onSave: addScholar);
           },
           icon: const Icon(Icons.person_add_alt_1),
           label: const Text('Add Scholar'),
-        ),
-      ],
+        );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              searchField,
+              const SizedBox(height: 10),
+              categoryFilter,
+              const SizedBox(height: 10),
+              addButton,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(flex: 3, child: searchField),
+            const SizedBox(width: 10),
+            SizedBox(width: 230, child: categoryFilter),
+            const SizedBox(width: 10),
+            addButton,
+          ],
+        );
+      },
     );
   }
 
@@ -631,29 +677,51 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           : cat == selectedKey;
     }).length;
     final selectedAccent = _categoryAccentForStats(selectedKey);
-    return Row(
-      children: [
-        _statCard(
-          'Total Scholars',
-          total.toString(),
-          const Color(0xFF5E35B1),
-          Icons.people_alt_rounded,
-        ),
-        const SizedBox(width: 10),
-        _statCard(
-          'Filtered Results',
-          visible.toString(),
-          const Color.fromARGB(255, 215, 171, 196),
-          Icons.filter_alt_rounded,
-        ),
-        const SizedBox(width: 10),
-        _statCard(
-          selectedLabel,
-          selectedCount.toString(),
-          selectedAccent,
-          _categoryIconForStats(selectedKey),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const spacing = 10.0;
+        final columns = width >= 1000
+            ? 3
+            : width >= 640
+                ? 2
+                : 1;
+        final cardWidth = (width - ((columns - 1) * spacing)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            SizedBox(
+              width: cardWidth,
+              child: _statCard(
+                'Total Scholars',
+                total.toString(),
+                const Color(0xFF5E35B1),
+                Icons.people_alt_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _statCard(
+                'Filtered Results',
+                visible.toString(),
+                const Color.fromARGB(255, 215, 171, 196),
+                Icons.filter_alt_rounded,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _statCard(
+                selectedLabel,
+                selectedCount.toString(),
+                selectedAccent,
+                _categoryIconForStats(selectedKey),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -695,80 +763,215 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   }
 
   Widget _statCard(String label, String value, Color color, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _shiftLightness(color, 0.30).withOpacity(0.55),
-              Colors.white.withOpacity(0.96),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _shiftLightness(color, 0.30).withOpacity(0.55),
+            Colors.white.withOpacity(0.96),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -10,
+            bottom: -14,
+            child: Opacity(
+              opacity: 0.10,
+              child: Icon(icon, size: 96, color: color),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withOpacity(0.18)),
+                    ),
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF6A5A79),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  height: 1.0,
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.22)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 920) {
+          return const Row(
+            children: [
+              Expanded(flex: 3, child: Text('Scholar')),
+              Expanded(flex: 3, child: Text('Academic Info')),
+              Expanded(flex: 2, child: Text('Category')),
+              Expanded(flex: 2, child: Text('Assigned / Type')),
+              Expanded(flex: 2, child: Text('Actions')),
+            ],
+          );
+        }
+
+        return const Text(
+          'Scholar Records',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2D0D44),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _mobileInfoGroup(String label, Widget child) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 140, maxWidth: 240),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF6A5A79),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
-        child: Stack(
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _responsiveScholarRow({
+    required Widget scholar,
+    required Widget academicInfo,
+    required Widget category,
+    required Widget assignedType,
+    required Widget actions,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 920) {
+          return Row(
+            children: [
+              Expanded(flex: 3, child: scholar),
+              Expanded(flex: 3, child: academicInfo),
+              Expanded(flex: 2, child: category),
+              Expanded(flex: 2, child: assignedType),
+              Expanded(flex: 2, child: actions),
+            ],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Positioned(
-              right: -10,
-              bottom: -14,
-              child: Opacity(
-                opacity: 0.10,
-                child: Icon(icon, size: 96, color: color),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            scholar,
+            const SizedBox(height: 8),
+            academicInfo,
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: color.withOpacity(0.18)),
-                      ),
-                      child: Icon(icon, color: color, size: 18),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF6A5A79),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                  ),
-                ),
+                _mobileInfoGroup('Category', category),
+                _mobileInfoGroup('Assigned / Type', assignedType),
               ],
             ),
+            const SizedBox(height: 8),
+            actions,
           ],
+        );
+      },
+    );
+  }
+
+  Widget _actionButtons(
+    Map<String, dynamic> scholar,
+    String course,
+    String year,
+    String rawAssigned,
+    String rawCategory,
+    String name,
+  ) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        OutlinedButton.icon(
+          onPressed: () {
+            _courseController.text = course;
+            _yearLevelController.text = year;
+            _assignedAreaController.text = rawAssigned == '-' ? '' : rawAssigned;
+            _selectedFormCategory = _displayCategory(rawCategory);
+            _selectedAcademicType = _academicTypeLabel(scholar['academic_type']);
+            _selectedSportType = _sportTypeLabel(scholar['sport_type']);
+            _selectedGiftType = _giftTypeLabel(scholar['gift_type']).isEmpty
+                ? ScholarshipTypes.giftTypeOptions.keys.first
+                : _giftTypeLabel(scholar['gift_type']);
+            _showFormDialog(
+              title: 'Edit Scholar',
+              isEdit: true,
+              onSave: () =>
+                  _editScholar((scholar['scholar_id'] ?? '').toString()),
+            );
+          },
+          icon: const Icon(Icons.edit, size: 18),
+          label: const Text('Edit'),
         ),
-      ),
+        OutlinedButton.icon(
+          onPressed: () => _showDeleteConfirmation(
+            (scholar['user_id'] ?? '').toString(),
+            name,
+          ),
+          style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+          icon: const Icon(Icons.delete, size: 18),
+          label: const Text('Delete'),
+        ),
+      ],
     );
   }
 
@@ -807,15 +1010,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                           topRight: Radius.circular(14),
                         ),
                       ),
-                      child: const Row(
-                        children: [
-                          Expanded(flex: 3, child: Text('Scholar')),
-                          Expanded(flex: 3, child: Text('Academic Info')),
-                          Expanded(flex: 2, child: Text('Category')),
-                          Expanded(flex: 2, child: Text('Assigned / Type')),
-                          Expanded(flex: 2, child: Text('Actions')),
-                        ],
-                      ),
+                      child: _buildTableHeader(),
                     ),
                     ListView.separated(
                       shrinkWrap: true,
@@ -842,88 +1037,32 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                               : const Color(0xFFFCFBFE),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700)),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      email,
-                                      style: const TextStyle(
-                                          color: Color(0xFF6A5A79),
-                                          fontSize: 12),
-                                    ),
-                                  ],
+                          child: _responsiveScholarRow(
+                            scholar: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  email,
+                                  style: const TextStyle(
+                                      color: Color(0xFF6A5A79), fontSize: 12),
                                 ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Text("$course (Year $year)"),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(category),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(assignedDisplay),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'Edit',
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.blue),
-                                      onPressed: () {
-                                        _courseController.text = course;
-                                        _yearLevelController.text = year;
-                                        _assignedAreaController.text =
-                                            rawAssigned == '-'
-                                                ? ''
-                                                : rawAssigned;
-                                        _selectedFormCategory =
-                                            _displayCategory(rawCategory);
-                                        _selectedAcademicType =
-                                            _academicTypeLabel(
-                                                s['academic_type']);
-                                        _selectedSportType =
-                                            _sportTypeLabel(s['sport_type']);
-                                        _selectedGiftType = _giftTypeLabel(
-                                                    s['gift_type'])
-                                                .isEmpty
-                                            ? ScholarshipTypes
-                                                .giftTypeOptions.keys.first
-                                            : _giftTypeLabel(s['gift_type']);
-                                        _showFormDialog(
-                                          title: 'Edit Scholar',
-                                          isEdit: true,
-                                          onSave: () => _editScholar(
-                                              (s['scholar_id'] ?? '')
-                                                  .toString()),
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Delete',
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red),
-                                      onPressed: () => _showDeleteConfirmation(
-                                        (s['user_id'] ?? '').toString(),
-                                        name,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            academicInfo: Text("$course (Year $year)"),
+                            category: Text(category),
+                            assignedType: Text(assignedDisplay),
+                            actions: _actionButtons(
+                              s,
+                              course,
+                              year,
+                              rawAssigned,
+                              rawCategory,
+                              name,
+                            ),
                           ),
                         );
                       },

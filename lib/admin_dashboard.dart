@@ -240,32 +240,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Admin Operations Dashboard",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2D0D44),
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Live monitoring for scholars, verifications, and document flow",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6A5A79),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          FilledButton.icon(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 640;
+          final refreshButton = FilledButton.icon(
             onPressed: isLoading ? null : () => _fetchAdminStats(),
             icon: isRefreshing
                 ? const SizedBox(
@@ -275,8 +253,64 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
                   )
                 : const Icon(Icons.sync),
             label: const Text("Refresh"),
-          ),
-        ],
+          );
+
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Admin Operations Dashboard",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF2D0D44),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "Live monitoring for scholars, verifications, and document flow",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6A5A79),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                refreshButton,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Admin Operations Dashboard",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2D0D44),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "Live monitoring for scholars, verifications, and document flow",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6A5A79),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              refreshButton,
+            ],
+          );
+        },
       ),
     );
   }
@@ -311,11 +345,16 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
             final minCardWidth = 240.0;
             final spacing = 12.0;
             final columns =
-                ((width + spacing) / (minCardWidth + spacing)).floor().clamp(1, 3);
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+                ((width + spacing) / (minCardWidth + spacing)).floor().clamp(
+                      1,
+                      3,
+                    );
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
               children: [
                 _statCardFlexible(
+                  width: width,
                   columns: columns,
                   spacing: spacing,
                   child: _buildStatCard(
@@ -326,6 +365,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
                   ),
                 ),
                 _statCardFlexible(
+                  width: width,
                   columns: columns,
                   spacing: spacing,
                   child: _buildStatCard(
@@ -336,6 +376,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
                   ),
                 ),
                 _statCardFlexible(
+                  width: width,
                   columns: columns,
                   spacing: spacing,
                   child: _buildStatCard(
@@ -354,21 +395,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
   }
 
   Widget _statCardFlexible({
+    required double width,
     required int columns,
     required double spacing,
     required Widget child,
   }) {
-    if (columns <= 1) {
-      return Expanded(child: child);
-    }
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: spacing / 2,
-          right: spacing / 2,
-        ),
-        child: child,
-      ),
+    final cardWidth = columns <= 1
+        ? width
+        : (width - ((columns - 1) * spacing)) / columns;
+    return SizedBox(
+      width: cardWidth,
+      child: child,
     );
   }
 
@@ -504,13 +541,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
               topRight: Radius.circular(12),
             ),
           ),
-          child: const Row(
-            children: [
-              Expanded(flex: 3, child: Text('Student Name')),
-              Expanded(flex: 3, child: Text('Document Type')),
-              Expanded(flex: 2, child: Text('Submitted')),
-              Expanded(flex: 2, child: Text('Status')),
-            ],
+          child: _responsiveSubmissionRow(
+            header: true,
+            name: const Text('Student Name'),
+            type: const Text('Document Type'),
+            submitted: const Text('Submitted'),
+            status: const Text('Status'),
           ),
         ),
         ListView.separated(
@@ -532,37 +568,106 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
             return Container(
               color: index.isEven ? Colors.white : const Color(0xFFFCFBFE),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      studentName,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      documentType,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      submittedAt,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(flex: 2, child: _statusBadge(status)),
-                ],
+              child: _responsiveSubmissionRow(
+                header: false,
+                name: Text(
+                  studentName,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                type: Text(
+                  documentType,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                submitted: Text(
+                  submittedAt,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                status: _statusBadge(status),
               ),
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _responsiveSubmissionRow({
+    required bool header,
+    required Widget name,
+    required Widget type,
+    required Widget submitted,
+    required Widget status,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 720) {
+          return Row(
+            children: [
+              Expanded(flex: 3, child: name),
+              Expanded(flex: 3, child: type),
+              Expanded(flex: 2, child: submitted),
+              Expanded(flex: 2, child: status),
+            ],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            name,
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _mobileSubmissionField(
+                  label: 'Document',
+                  child: type,
+                  header: header,
+                ),
+                _mobileSubmissionField(
+                  label: 'Submitted',
+                  child: submitted,
+                  header: header,
+                ),
+                _mobileSubmissionField(
+                  label: 'Status',
+                  child: status,
+                  header: header,
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _mobileSubmissionField({
+    required String label,
+    required Widget child,
+    required bool header,
+  }) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 220),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: header
+                  ? const Color(0xFF2D0D44)
+                  : const Color(0xFF6A5A79),
+            ),
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
     );
   }
 

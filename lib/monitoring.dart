@@ -607,33 +607,49 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: GridView.count(
-        crossAxisCount: 3,
-        crossAxisSpacing: 25,
-        mainAxisSpacing: 25,
-        childAspectRatio: 1.6,
-        children: [
-          _buildBox('Student Assistant', const Color(0xFF43A047),
-              () => setState(() => currentView = 'student_assistant'),
-              count: countFor('student_assistant')),
-          _buildBox('Academic Scholar', const Color(0xFFE6BE5A),
-              () => setState(() => currentView = 'academic_scholar'),
-              count: countFor('academic_scholar')),
-          _buildBox('Varsity', const Color(0xFFB39DDB),
-              () => setState(() => currentView = 'varsity'),
-              count: countFor('varsity')),
-          _buildBox('Gift of Education', const Color(0xFFD87474),
-              () => setState(() => currentView = 'gift_of_education'),
-              count: countFor('gift_of_education')),
-          _buildBox(
-            'Student Evaluations',
-            const Color(0xFF6A1B9A),
-            () {
-              setState(() => currentView = 'evaluations');
-              _loadEvaluations(program: _evaluationProgram);
-            },
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final crossAxisCount = width >= 1100
+              ? 3
+              : width >= 700
+                  ? 2
+                  : 1;
+          final childAspectRatio = crossAxisCount == 1
+              ? 1.25
+              : crossAxisCount == 2
+                  ? 1.35
+                  : 1.6;
+
+          return GridView.count(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 25,
+            mainAxisSpacing: 25,
+            childAspectRatio: childAspectRatio,
+            children: [
+              _buildBox('Student Assistant', const Color(0xFF43A047),
+                  () => setState(() => currentView = 'student_assistant'),
+                  count: countFor('student_assistant')),
+              _buildBox('Academic Scholar', const Color(0xFFE6BE5A),
+                  () => setState(() => currentView = 'academic_scholar'),
+                  count: countFor('academic_scholar')),
+              _buildBox('Varsity', const Color(0xFFB39DDB),
+                  () => setState(() => currentView = 'varsity'),
+                  count: countFor('varsity')),
+              _buildBox('Gift of Education', const Color(0xFFD87474),
+                  () => setState(() => currentView = 'gift_of_education'),
+                  count: countFor('gift_of_education')),
+              _buildBox(
+                'Student Evaluations',
+                const Color(0xFF6A1B9A),
+                () {
+                  setState(() => currentView = 'evaluations');
+                  _loadEvaluations(program: _evaluationProgram);
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -970,24 +986,40 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 25,
-                mainAxisSpacing: 25,
-                childAspectRatio: 1.6,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) => _buildBox(
-                  items[index]['title'],
-                  items[index]['color'],
-                  () => _openArea(items[index]['title'], from),
-                  count: items[index]['count'] is int
-                      ? items[index]['count'] as int
-                      : null,
-                  previewLines: items[index]['previewLines'] is List<String>
-                      ? items[index]['previewLines'] as List<String>
-                      : null),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final crossAxisCount = width >= 1100
+                    ? 3
+                    : width >= 700
+                        ? 2
+                        : 1;
+                final childAspectRatio = crossAxisCount == 1
+                    ? 1.15
+                    : crossAxisCount == 2
+                        ? 1.25
+                        : 1.6;
+
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 25,
+                    mainAxisSpacing: 25,
+                    childAspectRatio: childAspectRatio,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) => _buildBox(
+                      items[index]['title'],
+                      items[index]['color'],
+                      () => _openArea(items[index]['title'], from),
+                      count: items[index]['count'] is int
+                          ? items[index]['count'] as int
+                          : null,
+                      previewLines: items[index]['previewLines'] is List<String>
+                          ? items[index]['previewLines'] as List<String>
+                          : null),
+                );
+              },
             ),
           ),
         ),
@@ -1125,61 +1157,76 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: SingleChildScrollView(
-                        child: DataTable(
-                          headingRowColor:
-                              WidgetStateProperty.all(const Color(0xFFF8F5FB)),
-                          columnSpacing: 30,
-                          headingRowHeight: 70,
-                          dataRowHeight: 65,
-                          columns: [
-                            const DataColumn(
-                                label: Text('Scholar Name',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                            const DataColumn(
-                                label: Text('Course/Year',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                            DataColumn(
-                              label: Row(
-                                children: [
-                                  const Text('Due Date',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(width: 6),
-                                  IconButton(
-                                    tooltip: 'Edit Due Dates',
-                                    icon: const Icon(Icons.edit_calendar,
-                                        size: 18, color: Color(0xFF6A1B9A)),
-                                    onPressed: _showDueDateDialog,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (showDutyHours) ...[
+                        scrollDirection: Axis.horizontal,
+                        child: SingleChildScrollView(
+                          child: DataTable(
+                            headingRowColor:
+                                WidgetStateProperty.all(const Color(0xFFF8F5FB)),
+                            columnSpacing: 30,
+                            headingRowHeight: 70,
+                            dataRowHeight: 65,
+                            columns: [
                               const DataColumn(
-                                  label: Text('Supervisor',
+                                  label: Text('Scholar Name',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold))),
                               const DataColumn(
-                                  label: Text('Duty Hours',
+                                  label: Text('Course/Year',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                              DataColumn(
+                                label: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Due Date',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    IconButton(
+                                      tooltip: 'Edit Due Dates',
+                                      icon: const Icon(Icons.edit_calendar,
+                                          size: 18, color: Color(0xFF6A1B9A)),
+                                      onPressed: _showDueDateDialog,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 28,
+                                        minHeight: 28,
+                                      ),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (showDutyHours) ...[
+                                const DataColumn(
+                                    label: Text('Supervisor',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                const DataColumn(
+                                    label: Text('Duty Hours',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                              ],
+                              const DataColumn(
+                                  label: Text('Grades',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                              const DataColumn(
+                                  label: Text('Renewal',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold))),
+                              const DataColumn(
+                                  label: Text('Remarks',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold))),
                             ],
-                            const DataColumn(
-                                label: Text('Grades',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                            const DataColumn(
-                                label: Text('Renewal',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                            const DataColumn(
-                                label: Text('Remarks',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                          ],
-                          rows: scholarRows,
+                            rows: scholarRows,
+                          ),
                         ),
                       ),
                     ),
@@ -2185,85 +2232,109 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                   child: Icon(icon, size: 140, color: foregroundColor),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCompact = constraints.maxWidth < 180;
+                  final showChevron = constraints.maxWidth >= 96;
+                  final horizontalPadding = isCompact ? 14.0 : 22.0;
+                  final verticalPadding = isCompact ? 14.0 : 20.0;
+                  final iconPadding = isCompact ? 7.0 : 10.0;
+                  final iconSize = isCompact ? 18.0 : 22.0;
+                  final titleSize = isCompact ? 16.0 : 20.0;
+                  final previewCount = constraints.maxWidth < 260 ? 1 : 2;
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: verticalPadding,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: surfaceOverlay,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: surfaceBorder,
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(iconPadding),
+                              decoration: BoxDecoration(
+                                color: surfaceOverlay,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: surfaceBorder,
+                                ),
+                              ),
+                              child: Icon(
+                                icon,
+                                color: foregroundColor,
+                                size: iconSize,
+                              ),
                             ),
-                          ),
-                          child: Icon(icon, color: foregroundColor, size: 22),
+                            if (showChevron) ...[
+                              const Spacer(),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: foregroundColor.withOpacity(0.85),
+                              ),
+                            ],
+                          ],
                         ),
                         const Spacer(),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: foregroundColor.withOpacity(0.85),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: foregroundColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    if (count != null) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: surfaceOverlay,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: surfaceBorder,
-                          ),
-                        ),
-                        child: Text(
-                          '$count scholar${count == 1 ? '' : 's'}',
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: foregroundColor,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
                           ),
                         ),
-                      ),
-                    ],
-                    if (previewLines != null && previewLines.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      ...previewLines.take(2).map(
-                            (line) => Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                line,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: foregroundColor.withOpacity(0.78),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        if (count != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: surfaceOverlay,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: surfaceBorder,
+                              ),
+                            ),
+                            child: Text(
+                              '$count scholar${count == 1 ? '' : 's'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: foregroundColor,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
-                    ],
-                  ],
-                ),
+                        ],
+                        if (previewLines != null && previewLines.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          ...previewLines.take(previewCount).map(
+                                (line) => Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    line,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: foregroundColor.withOpacity(0.78),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),

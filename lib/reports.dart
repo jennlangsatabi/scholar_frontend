@@ -163,35 +163,61 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: [
-                        _buildStatCard(
-                          'Total Scholars',
-                          '${summary['total_scholars'] ?? 0}',
-                          Icons.people_alt_rounded,
-                          const Color(0xFF1E88E5),
-                        ),
-                        _buildStatCard(
-                          'Approved',
-                          '${summary['approved'] ?? 0}',
-                          Icons.verified_rounded,
-                          const Color(0xFF43A047),
-                        ),
-                        _buildStatCard(
-                          'Pending',
-                          '${summary['pending'] ?? 0}',
-                          Icons.hourglass_top_rounded,
-                          const Color(0xFFFB8C00),
-                        ),
-                        _buildStatCard(
-                          'Rejected',
-                          '${summary['rejected'] ?? 0}',
-                          Icons.cancel_rounded,
-                          const Color(0xFFE53935),
-                        ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        const spacing = 20.0;
+                        final columns = width >= 1100
+                            ? 4
+                            : width >= 700
+                                ? 2
+                                : 1;
+                        final cardWidth =
+                            (width - ((columns - 1) * spacing)) / columns;
+
+                        return Wrap(
+                          spacing: spacing,
+                          runSpacing: spacing,
+                          children: [
+                            SizedBox(
+                              width: cardWidth,
+                              child: _buildStatCard(
+                                'Total Scholars',
+                                '${summary['total_scholars'] ?? 0}',
+                                Icons.people_alt_rounded,
+                                const Color(0xFF1E88E5),
+                              ),
+                            ),
+                            SizedBox(
+                              width: cardWidth,
+                              child: _buildStatCard(
+                                'Approved',
+                                '${summary['approved'] ?? 0}',
+                                Icons.verified_rounded,
+                                const Color(0xFF43A047),
+                              ),
+                            ),
+                            SizedBox(
+                              width: cardWidth,
+                              child: _buildStatCard(
+                                'Pending',
+                                '${summary['pending'] ?? 0}',
+                                Icons.hourglass_top_rounded,
+                                const Color(0xFFFB8C00),
+                              ),
+                            ),
+                            SizedBox(
+                              width: cardWidth,
+                              child: _buildStatCard(
+                                'Rejected',
+                                '${summary['rejected'] ?? 0}',
+                                Icons.cancel_rounded,
+                                const Color(0xFFE53935),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 34),
                     LayoutBuilder(
@@ -256,12 +282,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     Color accent,
   ) {
     return Container(
-      width: 230,
-      padding: const EdgeInsets.all(25),
+      constraints: const BoxConstraints(minHeight: 138),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _surface.withOpacity(0.96),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _shiftLightness(accent, 0.32).withOpacity(0.55),
+            _surface.withOpacity(0.96),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        border: Border.all(color: accent.withOpacity(0.20)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -280,40 +313,49 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Icon(icon, size: 92, color: accent),
             ),
           ),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundColor: accent.withOpacity(0.12),
-                child: Icon(icon, color: accent),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: accent.withOpacity(0.18)),
+                ),
+                child: Icon(icon, color: accent, size: 18),
               ),
-              const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: _ink,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 12),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  color: _ink,
+                  height: 1.0,
+                ),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Color _shiftLightness(Color base, double delta) {
+    final hsl = HSLColor.fromColor(base);
+    return hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0)).toColor();
   }
 
   Widget _buildChartContainer({
