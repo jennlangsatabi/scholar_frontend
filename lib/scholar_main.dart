@@ -12,6 +12,7 @@ import 'academic_profile.dart'; // Academic Profile
 import 'upload_files.dart';
 import 'notification.dart';
 import 'services/backend_api.dart';
+import 'services/api_config.dart';
 
 class ScholarMainSkeleton extends StatefulWidget {
   final String scholarType;
