@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
-import 'services/api_config.dart';
+import 'services/backend_api.dart';
 
 class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
@@ -70,24 +68,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
     try {
       await _ensureScholarDirectory();
 
-      final uri = ApiConfig.uri('get_admin_stats.php', {
-        'scholar_type': selectedScholarType,
-      });
-      final response = await http.get(uri);
-
-      if (response.statusCode != 200) {
-        throw Exception("Server status code: ${response.statusCode}");
-      }
-
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) {
-        throw const FormatException("Server returned non-JSON data.");
-      }
-
-      final dynamic decoded = json.decode(body);
-      if (decoded is! Map<String, dynamic>) {
-        throw const FormatException("Invalid JSON payload shape.");
-      }
+      final decoded = await BackendApi.getJson(
+        'get_admin_stats.php',
+        query: {'scholar_type': selectedScholarType},
+        cacheTtl: const Duration(seconds: 8),
+        retries: 1,
+      );
 
       final submissionsRaw = decoded['recent_submissions'];
       List<Map<String, dynamic>> submissions = submissionsRaw is List
@@ -145,20 +131,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
 
   Future<List<Map<String, dynamic>>> _fetchPendingVerificationRows() async {
     try {
-      final response = await http.get(
-        ApiConfig.uri("get_pending_verifications.php"),
+      return await BackendApi.getList(
+        "get_pending_verifications.php",
+        cacheTtl: const Duration(seconds: 10),
+        retries: 1,
       );
-      if (response.statusCode != 200) return [];
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) return [];
-      final decoded = json.decode(body);
-      final list = decoded is Map && decoded['data'] is List
-          ? decoded['data'] as List
-          : (decoded is List ? decoded : []);
-      return list
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
     } catch (_) {
       return [];
     }
@@ -166,22 +143,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
 
   Future<void> _fetchScholarDirectory() async {
     try {
-      final response = await http
-          .get(ApiConfig.uri("get_scholars.php"));
-      if (response.statusCode != 200) return;
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) return;
-
-      final decoded = json.decode(body);
-      final list = decoded is List
-          ? decoded
-          : (decoded is Map && decoded['data'] is List ? decoded['data'] : []);
-      if (list is! List) return;
-
       final map = <int, String>{};
-      for (final raw in list) {
-        if (raw is! Map) continue;
-        final item = Map<String, dynamic>.from(raw);
+      final list = await BackendApi.getList(
+        "get_scholars.php",
+        cacheTtl: _scholarDirectoryTtl,
+        retries: 1,
+      );
+      for (final item in list) {
         final id = int.tryParse((item['user_id'] ?? '').toString());
         if (id == null || id <= 0) continue;
 

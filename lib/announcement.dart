@@ -111,7 +111,11 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
 
     try {
       final list = await BackendApi.unwrapList(
-        BackendApi.getJson('get_scholars.php'),
+        BackendApi.getJson(
+          'get_scholars.php',
+          cacheTtl: const Duration(minutes: 2),
+          retries: 1,
+        ),
       );
       if (!mounted) return;
       setState(() {

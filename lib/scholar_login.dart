@@ -3,6 +3,7 @@ import 'package:http/http.dart';
 
 import 'services/backend_api.dart';
 import 'services/api_config.dart';
+import 'dart:async';
 
 class ScholarLoginScreen extends StatefulWidget {
   final void Function(Map<String, dynamic>) onLoginSuccess;
@@ -40,6 +41,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    if (_isLoading) return;
     if (_userController.text.isEmpty || _passController.text.isEmpty) {
       _showError("Please enter both email and password");
       return;
@@ -48,6 +50,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      await BackendApi.warmUp();
       final data = await BackendApi.postForm(
         'auth_login.php',
         body: {
@@ -56,6 +59,8 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
           'scholarship_category': localScholarType,
           'scholarship_type': localScholarType,
         },
+        timeout: const Duration(seconds: 45),
+        retries: 3,
       );
         if (data['status'] == 'success') {
           final String dbRole = data['role'].toString().toLowerCase();
@@ -106,6 +111,59 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
           _showError(data['message'] ?? "Login Failed");
         }
     } catch (e) {
+      if (e is TimeoutException || e is ClientException || e is FormatException) {
+        try {
+          await Future.delayed(const Duration(seconds: 2));
+          await BackendApi.warmUp();
+          final data = await BackendApi.postForm(
+            'auth_login.php',
+            body: {
+              'email': _userController.text,
+              'password': _passController.text,
+              'scholarship_category': localScholarType,
+              'scholarship_type': localScholarType,
+            },
+            timeout: const Duration(seconds: 45),
+            retries: 2,
+          );
+          if (data['status'] == 'success') {
+            final String dbRole = data['role'].toString().toLowerCase();
+            final String displayName = (data['username'] ??
+                    data['name'] ??
+                    data['email'] ??
+                    'Scholar')
+                .toString();
+            final String resolvedUserId =
+                (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
+                    .toString();
+
+            if (resolvedUserId.isNotEmpty && dbRole == 'scholar') {
+              final backendCategory = (data['scholarship_category'] ??
+                      data['scholarship_type'] ??
+                      '')
+                  .toString()
+                  .trim();
+              if (backendCategory.isNotEmpty &&
+                  _matchesSelectedRole(backendCategory, localScholarType)) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Welcome Scholar, $displayName!")),
+                );
+                widget.onLoginSuccess({
+                  'id': resolvedUserId,
+                  'name': displayName,
+                  'type': backendCategory,
+                  'role': dbRole,
+                  'email': data['email']?.toString() ?? '',
+                });
+                return;
+              }
+            }
+          }
+        } catch (_) {
+          // Fall through to default error path.
+        }
+      }
       _showError(_buildConnectionErrorMessage(e));
       debugPrint("Scholar login error: $e");
     } finally {

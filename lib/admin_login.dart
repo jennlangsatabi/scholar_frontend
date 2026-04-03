@@ -3,6 +3,7 @@ import 'package:http/http.dart';
 
 import 'services/backend_api.dart';
 import 'services/api_config.dart';
+import 'dart:async';
 
 class AdminLoginScreen extends StatefulWidget {
   final void Function(Map<String, dynamic>) onLoginSuccess;
@@ -33,6 +34,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   // --- LOGIN LOGIC ---
   Future<void> _handleLogin() async {
+    if (_isLoading) return;
     if (_userController.text.isEmpty || _passController.text.isEmpty) {
       _showError("Please enter both email and password");
       return;
@@ -41,12 +43,15 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      await BackendApi.warmUp();
       final data = await BackendApi.postForm(
         'auth_login.php',
         body: {
           'email': _userController.text,
           'password': _passController.text,
         },
+        timeout: const Duration(seconds: 45),
+        retries: 3,
       );
       if (data['status'] == 'success') {
         String dbRole = data['role'].toString().toLowerCase();
@@ -75,6 +80,45 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         _showError(data['message'] ?? "Invalid Email or Password");
       }
     } catch (e) {
+      if (e is TimeoutException || e is ClientException || e is FormatException) {
+        // First request after Render cold-start can fail; retry once more while
+        // keeping the user on the same click.
+        try {
+          await Future.delayed(const Duration(seconds: 2));
+          await BackendApi.warmUp();
+          final data = await BackendApi.postForm(
+            'auth_login.php',
+            body: {
+              'email': _userController.text,
+              'password': _passController.text,
+            },
+            timeout: const Duration(seconds: 45),
+            retries: 2,
+          );
+          if (data['status'] == 'success') {
+            final String resolvedUserId =
+                (data['id'] ?? data['user_id'] ?? data['admin_id'] ?? '')
+                    .toString();
+            final String dbRole = data['role'].toString().toLowerCase();
+
+            if (dbRole == 'admin' && resolvedUserId.isNotEmpty) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Welcome, ${data['username']}!")),
+              );
+              widget.onLoginSuccess({
+                'id': resolvedUserId,
+                'name': data['username']?.toString() ?? 'Administrator',
+                'type': 'Admin',
+                'role': dbRole,
+              });
+              return;
+            }
+          }
+        } catch (_) {
+          // Fall through to default error path.
+        }
+      }
       _showError(_buildConnectionErrorMessage(e));
       debugPrint("Admin login error: $e");
     } finally {

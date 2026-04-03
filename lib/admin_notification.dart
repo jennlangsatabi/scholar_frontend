@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -38,7 +39,12 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
     try {
       final decoded = await BackendApi.unwrapList(
-        BackendApi.getJson('get_admin_notifications.php'),
+        BackendApi.getJson(
+          'get_admin_notifications.php',
+          query: const {'limit': '120'},
+          cacheTtl: const Duration(seconds: 8),
+          retries: 1,
+        ),
       );
 
       if (!mounted) return;
@@ -191,7 +197,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
     for (final target in deleteTargets) {
       try {
-        final response = await http.post(target.$1, body: target.$2);
+        final response = await http
+            .post(target.$1, body: target.$2)
+            .timeout(const Duration(seconds: 12));
         if (response.statusCode != 200) {
           continue;
         }
@@ -286,10 +294,12 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
     for (final id in _selectedIds.toList()) {
       try {
-        final response = await http.post(
-          Uri.parse("${_baseUrl}delete_reply.php"),
-          body: {'reply_id': id},
-        );
+        final response = await http
+            .post(
+              Uri.parse("${_baseUrl}delete_reply.php"),
+              body: {'reply_id': id},
+            )
+            .timeout(const Duration(seconds: 12));
         final decoded = _tryDecodeJson(response.body);
         final success = response.statusCode >= 200 &&
             response.statusCode < 300 &&
@@ -330,14 +340,16 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         initialMessages: thread,
         isAdminView: true,
         onSendReply: (message, visibility) async {
-          final response = await http.post(
-            Uri.parse("${_baseUrl}save_reply.php"),
-            body: {
-              'notification_id': _notificationId(item),
-              'message': message,
-              'visibility': visibility,
-            },
-          );
+          final response = await http
+              .post(
+                Uri.parse("${_baseUrl}save_reply.php"),
+                body: {
+                  'notification_id': _notificationId(item),
+                  'message': message,
+                  'visibility': visibility,
+                },
+              )
+              .timeout(const Duration(seconds: 12));
 
           final decoded = _tryDecodeJson(response.body);
           final success = response.statusCode >= 200 &&

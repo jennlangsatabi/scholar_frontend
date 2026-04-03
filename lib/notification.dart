@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -54,7 +55,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final parsed = await BackendApi.unwrapList(
         BackendApi.getJson(
           'get_notifications.php',
-          query: {'user_id': widget.userId},
+          query: {'user_id': widget.userId, 'limit': '80'},
+          cacheTtl: const Duration(seconds: 8),
+          retries: 1,
         ),
       );
 
@@ -227,18 +230,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
       Uri.parse("${_baseUrl}update_notification_status.php"),
     ];
 
-    for (final url in endpoints) {
-      try {
-        await http.post(url, body: {
-          'notification_id': id,
-          'user_id': widget.userId,
-          'is_read': read ? '1' : '0',
-          'status': read ? 'read' : 'unread',
-        });
-      } catch (_) {
-        // Keep local state even if backend fallback fails.
-      }
-    }
+    unawaited(
+      Future.wait(
+        endpoints.map((url) async {
+          try {
+            await http
+                .post(url, body: {
+                  'notification_id': id,
+                  'user_id': widget.userId,
+                  'is_read': read ? '1' : '0',
+                  'status': read ? 'read' : 'unread',
+                })
+                .timeout(const Duration(seconds: 8));
+          } catch (_) {
+            // Keep local state even if backend fallback fails.
+          }
+        }),
+      ),
+    );
   }
 
   Future<void> _setAllReadState(bool read) async {
@@ -253,17 +262,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
       Uri.parse("${_baseUrl}update_all_notifications_status.php"),
     ];
 
-    for (final url in endpoints) {
-      try {
-        await http.post(url, body: {
-          'user_id': widget.userId,
-          'is_read': read ? '1' : '0',
-          'status': read ? 'read' : 'unread',
-        });
-      } catch (_) {
-        // Keep local state even if backend fallback fails.
-      }
-    }
+    unawaited(
+      Future.wait(
+        endpoints.map((url) async {
+          try {
+            await http
+                .post(url, body: {
+                  'user_id': widget.userId,
+                  'is_read': read ? '1' : '0',
+                  'status': read ? 'read' : 'unread',
+                })
+                .timeout(const Duration(seconds: 8));
+          } catch (_) {
+            // Keep local state even if backend fallback fails.
+          }
+        }),
+      ),
+    );
   }
 
   Future<void> _deleteNotification(Map<String, dynamic> item) async {
@@ -296,10 +311,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     setState(() => _busyId = id);
 
     try {
-      final response = await http.post(
-        Uri.parse("${_baseUrl}delete_notification.php"),
-        body: {'notification_id': id},
-      );
+      final response = await http
+          .post(
+            Uri.parse("${_baseUrl}delete_notification.php"),
+            body: {'notification_id': id},
+          )
+          .timeout(const Duration(seconds: 12));
 
       final decoded = _tryDecodeJson(response.body);
       final success = response.statusCode == 200 &&
@@ -400,10 +417,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     for (final id in _selectedIds.toList()) {
       try {
-        final response = await http.post(
-          Uri.parse("${_baseUrl}delete_notification.php"),
-          body: {'notification_id': id},
-        );
+        final response = await http
+            .post(
+              Uri.parse("${_baseUrl}delete_notification.php"),
+              body: {'notification_id': id},
+            )
+            .timeout(const Duration(seconds: 12));
         final decoded = _tryDecodeJson(response.body);
         final success = response.statusCode >= 200 &&
             response.statusCode < 300 &&
@@ -509,15 +528,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                       setDialogState(() => isSending = true);
                       try {
-                        final response = await http.post(
-                          Uri.parse("${_baseUrl}save_reply.php"),
-            body: {
-              'notification_id': _notificationId(item),
-              'message': message,
-              'visibility': visibility,
-              'user_id': widget.userId,
-            },
-                        );
+                        final response = await http
+                            .post(
+                              Uri.parse("${_baseUrl}save_reply.php"),
+                              body: {
+                                'notification_id': _notificationId(item),
+                                'message': message,
+                                'visibility': visibility,
+                                'user_id': widget.userId,
+                              },
+                            )
+                            .timeout(const Duration(seconds: 12));
 
                         final decoded = _tryDecodeJson(response.body);
                         final success = response.statusCode >= 200 &&
@@ -595,23 +616,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
         initialMessages: thread,
         onSendReply: (message) async {
           final response = announcementId != null
-              ? await http.post(
-                  Uri.parse("${_baseUrl}save_announcement_comment.php"),
-                  body: {
-                    'announcement_id': announcementId.toString(),
-                    'message': message,
-                    'user_id': widget.userId,
-                  },
-                )
-              : await http.post(
-                  Uri.parse("${_baseUrl}save_reply.php"),
-                  body: {
-                    'notification_id': _notificationId(item),
-                    'message': message,
-                    'visibility': 'Admin',
-                    'user_id': widget.userId,
-                  },
-                );
+              ? await http
+                  .post(
+                    Uri.parse("${_baseUrl}save_announcement_comment.php"),
+                    body: {
+                      'announcement_id': announcementId.toString(),
+                      'message': message,
+                      'user_id': widget.userId,
+                    },
+                  )
+                  .timeout(const Duration(seconds: 12))
+              : await http
+                  .post(
+                    Uri.parse("${_baseUrl}save_reply.php"),
+                    body: {
+                      'notification_id': _notificationId(item),
+                      'message': message,
+                      'visibility': 'Admin',
+                      'user_id': widget.userId,
+                    },
+                  )
+                  .timeout(const Duration(seconds: 12));
           final decoded = _tryDecodeJson(response.body);
           final success = response.statusCode >= 200 &&
               response.statusCode < 300 &&

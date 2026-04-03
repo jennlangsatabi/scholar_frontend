@@ -13,7 +13,10 @@ class MonitoringScreen extends StatefulWidget {
   State<MonitoringScreen> createState() => _MonitoringScreenState();
 }
 
-class _MonitoringScreenState extends State<MonitoringScreen> {
+class _MonitoringScreenState extends State<MonitoringScreen>
+    with WidgetsBindingObserver {
+  static const _pollInterval = Duration(seconds: 30);
+  static const int _maxRowEnrichmentPerRefresh = 20;
   String currentView = 'main';
   String selectedAreaTitle = '';
   String parentView = 'main';
@@ -29,6 +32,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   Timer? _poller;
+  bool _scholarsRequestInFlight = false;
   String _gradeDueDate = '';
   String _renewalDueDate = '';
 
@@ -92,26 +96,55 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    BackendApi.warmUp();
     _loadScholars();
-    _poller =
-        Timer.periodic(const Duration(seconds: 5), (_) => _loadScholars());
+    _poller = Timer.periodic(_pollInterval, (_) => _loadScholars(silent: true));
   }
 
   @override
   void dispose() {
     _poller?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadScholars() async {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadScholars(silent: true);
+    }
+  }
+
+  Future<void> _loadScholars({bool silent = false}) async {
+    if (_scholarsRequestInFlight) return;
+    _scholarsRequestInFlight = true;
     try {
-      final payload = await BackendApi.getJson('get_monitoring_summary.php');
+      if (!silent && mounted) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+      }
+
+      final payload = await BackendApi.getJson(
+        'get_monitoring_summary.php',
+        cacheTtl: const Duration(seconds: 8),
+        retries: 1,
+      );
       final baseData = (payload['scholars'] as List? ?? const [])
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
-      final data = await _hydrateLiveScholarData(baseData);
+
+      final shouldEnrich = parentView != 'main';
+      final data = shouldEnrich
+          ? await _hydrateLiveScholarData(
+              baseData,
+              maxEnrich: _maxRowEnrichmentPerRefresh,
+            )
+          : baseData;
       if (!mounted) return;
       setState(() {
         _scholars = data;
@@ -126,11 +159,14 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
         _errorMessage = e.toString();
         _isLoading = false;
       });
+    } finally {
+      _scholarsRequestInFlight = false;
     }
   }
 
   Future<List<Map<String, dynamic>>> _hydrateLiveScholarData(
     List<Map<String, dynamic>> scholars,
+    {int maxEnrich = _maxRowEnrichmentPerRefresh}
   ) async {
     final hydrated = scholars
         .map((item) => Map<String, dynamic>.from(item))
@@ -138,10 +174,12 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
 
     final futures = <Future<void>>[];
     for (var i = 0; i < hydrated.length; i++) {
+      if (futures.length >= maxEnrich) break;
       final scholar = hydrated[i];
       final userId = _userId(scholar);
       if (userId <= 0) continue;
       final category = _normalizedCategory(scholar);
+      if (!_rowNeedsEnrichment(scholar, category)) continue;
       if (category == 'student_assistant') {
         futures.add(_enrichStudentAssistantRow(hydrated, i, userId));
       } else if (category == 'academic_scholar') {
@@ -160,6 +198,33 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
     return hydrated;
   }
 
+  bool _rowNeedsEnrichment(Map<String, dynamic> scholar, String category) {
+    bool isMissing(dynamic value) {
+      final s = (value ?? '').toString().trim();
+      return s.isEmpty || s == '—' || s.toLowerCase() == 'unknown';
+    }
+
+    if (category == 'varsity') {
+      return isMissing(scholar['sport_type']) ||
+          isMissing(scholar['head_coach']) ||
+          isMissing(scholar['training_schedule']) ||
+          isMissing(scholar['game_schedule']);
+    }
+    if (category == 'student_assistant') {
+      return isMissing(scholar['assigned_area']) ||
+          isMissing(scholar['duty_hours']) ||
+          isMissing(scholar['supervisor']);
+    }
+    if (category == 'academic_scholar') {
+      return isMissing(scholar['academic_type']);
+    }
+    if (category == 'gift_of_education') {
+      return isMissing(scholar['gift_type']);
+    }
+
+    return false;
+  }
+
   Future<void> _enrichVarsityRow(
     List<Map<String, dynamic>> scholars,
     int index,
@@ -169,6 +234,8 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       final payload = await BackendApi.getJson(
         'get_scholar_profile.php',
         query: {'user_id': userId.toString()},
+        cacheTtl: const Duration(minutes: 5),
+        retries: 1,
       );
       final profile = Map<String, dynamic>.from(
         payload['profile'] as Map? ?? const <String, dynamic>{},
@@ -227,10 +294,14 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
         BackendApi.getJson(
           'get_scholar_profile.php',
           query: {'user_id': userId.toString()},
+          cacheTtl: const Duration(minutes: 5),
+          retries: 1,
         ),
         BackendApi.getJson(
           'get_sa_stats.php',
           query: {'user_id': userId.toString()},
+          cacheTtl: const Duration(seconds: 30),
+          retries: 1,
         ),
       ]);
 
@@ -298,6 +369,8 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       final payload = await BackendApi.getJson(
         'get_scholar_profile.php',
         query: {'user_id': userId.toString()},
+        cacheTtl: const Duration(minutes: 5),
+        retries: 1,
       );
       final profile = Map<String, dynamic>.from(
         payload['profile'] as Map? ?? const <String, dynamic>{},
@@ -1379,6 +1452,8 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       final payload = await BackendApi.getJson(
         'get_scholar_profile.php',
         query: {'user_id': userId.toString()},
+        cacheTtl: const Duration(minutes: 5),
+        retries: 1,
       );
       final profile = Map<String, dynamic>.from(
         payload['profile'] as Map? ?? const <String, dynamic>{},

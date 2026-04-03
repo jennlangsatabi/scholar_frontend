@@ -60,7 +60,11 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     setState(() => _isLoading = true);
     try {
       _scholars = await BackendApi.unwrapList(
-        BackendApi.getJson('get_scholars.php'),
+        BackendApi.getJson(
+          'get_scholars.php',
+          cacheTtl: const Duration(minutes: 2),
+          retries: 1,
+        ),
       );
       _applyFilter();
     } catch (e) {

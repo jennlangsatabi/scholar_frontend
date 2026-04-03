@@ -53,7 +53,11 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     });
 
     try {
-      final payload = await BackendApi.getJson('get_scholars.php');
+      final payload = await BackendApi.getJson(
+        'get_scholars.php',
+        cacheTtl: const Duration(minutes: 2),
+        retries: 1,
+      );
       final list = _unwrapList(payload);
       if (!mounted) return;
       setState(() {

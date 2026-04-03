@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import 'services/api_config.dart';
+import 'services/backend_api.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -31,33 +30,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     try {
       await _fetchScholarDirectory();
-      final response = await http.get(ApiConfig.uri('get_verifications.php'));
-      if (response.statusCode != 200) {
-        throw Exception("Server status code: ${response.statusCode}");
-      }
-
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) {
-        throw const FormatException("Server returned non-JSON data.");
-      }
-
-      final decoded = json.decode(body);
-      List<dynamic> list;
-      if (decoded is List) {
-        list = decoded;
-      } else if (decoded is Map && decoded['data'] is List) {
-        list = decoded['data'] as List;
-      } else if (decoded is Map) {
-        list = [decoded];
-      } else {
-        list = <dynamic>[];
-      }
+      final list = await BackendApi.getList(
+        'get_pending_verifications.php',
+        cacheTtl: const Duration(seconds: 10),
+        retries: 1,
+      );
 
       setState(() {
-        pendingDocs = list
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
+        pendingDocs = list;
         isLoading = false;
       });
     } catch (e) {
@@ -70,21 +50,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Future<void> _fetchScholarDirectory() async {
     try {
-      final response = await http.get(ApiConfig.uri("get_scholars.php"));
-      if (response.statusCode != 200) return;
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) return;
-
-      final decoded = json.decode(body);
-      final list = decoded is List
-          ? decoded
-          : (decoded is Map && decoded['data'] is List ? decoded['data'] : []);
-      if (list is! List) return;
-
       final map = <int, String>{};
-      for (final raw in list) {
-        if (raw is! Map) continue;
-        final item = Map<String, dynamic>.from(raw);
+      final list = await BackendApi.getList(
+        'get_scholars.php',
+        cacheTtl: const Duration(minutes: 2),
+        retries: 1,
+      );
+      for (final item in list) {
         final id = int.tryParse((item['user_id'] ?? '').toString());
         if (id == null || id <= 0) continue;
 
@@ -104,20 +76,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Future<void> updateStatus(String docId, String newStatus) async {
     try {
-      final response = await http.post(
-        ApiConfig.uri('update_status.php'),
+      final result = await BackendApi.postForm(
+        'update_status.php',
         body: {'id': docId, 'status': newStatus},
+        retries: 1,
       );
-
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith('<')) {
-        throw const FormatException('Server returned non-JSON data');
-      }
-
-      final result = json.decode(body);
-      final ok = (result is Map) &&
-          (result['success'] == true ||
-              result['status']?.toString().toLowerCase() == 'success');
+      final ok = result['success'] == true ||
+          result['status']?.toString().toLowerCase() == 'success';
 
       if (!ok) {
         throw Exception(result.toString());

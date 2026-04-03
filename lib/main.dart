@@ -8,6 +8,7 @@ import 'scholar_login.dart';
 import 'admin_main.dart';
 import 'scholar_main.dart';
 import 'evaluation_form.dart';
+import 'services/backend_api.dart';
 
 void main() => runApp(const JMCFIScholarshipApp());
 
@@ -59,6 +60,12 @@ class _MainPortalPageState extends State<MainPortalPage> {
   String currentAdminName = 'Administrator';
   String selectedScholarType = 'Student Assistant Scholar';
   String currentScholarCategory = '';
+
+  @override
+  void initState() {
+    super.initState();
+    BackendApi.warmUp();
+  }
 
   @override
   Widget build(BuildContext context) {
