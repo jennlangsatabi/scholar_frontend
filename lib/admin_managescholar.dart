@@ -118,10 +118,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
 
     setState(() => _isProcessing = true);
     try {
-      final giftType = _selectedFormCategory == 'Gift of Education'
-          ? _giftTypePayload()
-          : '';
-      final payload = {
+      final payload = <String, dynamic>{
         "first_name": _firstNameController.text.trim(),
         "middle_name": _middleNameController.text.trim(),
         "last_name": _lastNameController.text.trim(),
@@ -131,13 +128,28 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         "scholarship_category": _toServerCategory(_selectedFormCategory),
         "scholarship_status": _initialScholarshipStatusPayload(),
         "status": _initialScholarshipStatusPayload(),
-        "assigned_area": _selectedFormCategory == 'Student Assistant'
-            ? _assignedAreaController.text.trim()
-            : '',
-        "academic_type": _academicTypePayload(),
-        "sport_type": _sportTypePayload(),
-        "gift_type": giftType,
       };
+
+      final assignedArea = _assignedAreaController.text.trim();
+      final academicType = _academicTypePayload();
+      final sportType = _sportTypePayload();
+      final giftType = _giftTypePayload();
+
+      if (_selectedFormCategory == 'Student Assistant' &&
+          assignedArea.isNotEmpty) {
+        payload["assigned_area"] = assignedArea;
+      }
+      if (_selectedFormCategory == 'Academic Scholar' &&
+          academicType.isNotEmpty) {
+        payload["academic_type"] = academicType;
+      }
+      if (_selectedFormCategory == 'Varsity Scholar' && sportType.isNotEmpty) {
+        payload["sport_type"] = sportType;
+      }
+      if (_selectedFormCategory == 'Gift of Education' &&
+          giftType.isNotEmpty) {
+        payload["gift_type"] = giftType;
+      }
 
       final data = await _createScholarWithStatusFallback(payload);
 
@@ -160,19 +172,32 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     try {
-      final payload = {
+      final payload = <String, dynamic>{
         "scholar_id": scholarId,
         "course": _courseController.text.trim(),
         "year_level": _yearLevelController.text.trim(),
-        "assigned_area": _selectedFormCategory == 'Student Assistant'
-            ? _assignedAreaController.text.trim()
-            : '',
-        "academic_type": _academicTypePayload(),
-        "sport_type": _sportTypePayload(),
-        "gift_type": _selectedFormCategory == 'Gift of Education'
-            ? _giftTypePayload()
-            : '',
       };
+
+      final assignedArea = _assignedAreaController.text.trim();
+      final academicType = _academicTypePayload();
+      final sportType = _sportTypePayload();
+      final giftType = _giftTypePayload();
+
+      if (_selectedFormCategory == 'Student Assistant' &&
+          assignedArea.isNotEmpty) {
+        payload["assigned_area"] = assignedArea;
+      }
+      if (_selectedFormCategory == 'Academic Scholar' &&
+          academicType.isNotEmpty) {
+        payload["academic_type"] = academicType;
+      }
+      if (_selectedFormCategory == 'Varsity Scholar' && sportType.isNotEmpty) {
+        payload["sport_type"] = sportType;
+      }
+      if (_selectedFormCategory == 'Gift of Education' &&
+          giftType.isNotEmpty) {
+        payload["gift_type"] = giftType;
+      }
 
       final data = await BackendApi.postForm(
         'edit_scholar.php',
