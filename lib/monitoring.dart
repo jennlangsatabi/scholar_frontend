@@ -767,90 +767,136 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBackButton('main'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Student Evaluations',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D0D44),
-                  ),
-                ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final pageHorizontalPadding = width < 600 ? 16.0 : 40.0;
+            final isNarrowHeader = width < 560;
+            final titleFontSize = (width * 0.065).clamp(18.0, 28.0);
+
+            final title = Text(
+              'Student Evaluations',
+              maxLines: isNarrowHeader ? 2 : 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: titleFontSize,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D0D44),
               ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Student Assistant'),
-                    selected: _evaluationProgram == 'student_assistant',
-                    onSelected: (selected) {
-                      if (!selected) return;
-                      _loadEvaluations(program: 'student_assistant');
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Varsity'),
-                    selected: _evaluationProgram == 'varsity',
-                    onSelected: (selected) {
-                      if (!selected) return;
-                      _loadEvaluations(program: 'varsity');
-                    },
-                  ),
-                ],
+            );
+
+            final programChips = [
+              ChoiceChip(
+                label: const Text('Student Assistant'),
+                selected: _evaluationProgram == 'student_assistant',
+                onSelected: (selected) {
+                  if (!selected) return;
+                  _loadEvaluations(program: 'student_assistant');
+                },
               ),
-              const SizedBox(width: 12),
-              IconButton(
-                tooltip: 'Refresh',
-                onPressed: () => _loadEvaluations(program: _evaluationProgram),
-                icon: const Icon(Icons.refresh),
+              ChoiceChip(
+                label: const Text('Varsity'),
+                selected: _evaluationProgram == 'varsity',
+                onSelected: (selected) {
+                  if (!selected) return;
+                  _loadEvaluations(program: 'varsity');
+                },
               ),
-            ],
-          ),
+            ];
+
+            final refreshButton = IconButton(
+              tooltip: 'Refresh',
+              onPressed: () => _loadEvaluations(program: _evaluationProgram),
+              icon: const Icon(Icons.refresh),
+            );
+
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: pageHorizontalPadding,
+                vertical: 10,
+              ),
+              child: isNarrowHeader
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: title),
+                            const SizedBox(width: 8),
+                            refreshButton,
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              programChips[0],
+                              const SizedBox(width: 8),
+                              programChips[1],
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: title),
+                        Wrap(spacing: 8, children: programChips),
+                        const SizedBox(width: 12),
+                        refreshButton,
+                      ],
+                    ),
+            );
+          },
         ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: _evaluationsLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _evaluationsError != null
-                    ? Center(child: Text(_evaluationsError!))
-                    : !hasData
-                        ? const Center(child: Text('No evaluations yet.'))
-                        : Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final pageHorizontalPadding = width < 600 ? 16.0 : 40.0;
+
+              return Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: pageHorizontalPadding),
+                child: _evaluationsLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _evaluationsError != null
+                        ? Center(child: Text(_evaluationsError!))
+                        : !hasData
+                            ? const Center(child: Text('No evaluations yet.'))
+                            : Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minWidth: constraints.maxWidth,
-                                      ),
-                                      child: DataTable(
-                                        headingRowColor: WidgetStateProperty.all(
-                                          const Color(0xFFF8F5FB),
-                                        ),
-                                        columnSpacing: 24,
-                                        headingRowHeight: 64,
-                                        dataRowHeight: 62,
-                                        columns: const [
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: constraints.maxWidth,
+                                          ),
+                                          child: DataTable(
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                              const Color(0xFFF8F5FB),
+                                            ),
+                                            columnSpacing: 24,
+                                            headingRowHeight: 64,
+                                            dataRowHeight: 62,
+                                            columns: const [
                                           DataColumn(
                                             label: Text(
                                               'Student',
@@ -1000,6 +1046,8 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                               ),
                             ),
                           ),
+              );
+            },
           ),
         ),
       ],
