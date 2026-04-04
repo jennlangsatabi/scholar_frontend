@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'services/api_config.dart';
 import 'services/backend_api.dart';
@@ -15,6 +16,18 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen>
     with WidgetsBindingObserver {
   static const Duration _pollInterval = Duration(seconds: 8);
+  static final RegExp _imageExtPattern = RegExp(
+    r'\.(jpg|jpeg|png|gif|webp|bmp)(?=$|[?#])',
+    caseSensitive: false,
+  );
+  static final RegExp _pdfExtPattern = RegExp(
+    r'\.pdf(?=$|[?#])',
+    caseSensitive: false,
+  );
+  static final RegExp _docxExtPattern = RegExp(
+    r'\.docx(?=$|[?#])',
+    caseSensitive: false,
+  );
 
   List<Map<String, dynamic>> pendingDocs = [];
   Map<int, String> _scholarNameByUserId = {};
@@ -254,7 +267,7 @@ class _VerificationScreenState extends State<VerificationScreen>
     return "$month $day, $year $hour12:$minute $ampm";
   }
 
-  String _resolveImageUrl(Map<String, dynamic> doc) {
+  String _resolveRawFileValue(Map<String, dynamic> doc) {
     final candidates = [
       doc['image_url'],
       doc['file_path'],
@@ -265,15 +278,33 @@ class _VerificationScreenState extends State<VerificationScreen>
 
     for (final raw in candidates) {
       final value = raw?.toString().trim() ?? '';
-      if (value.isEmpty) continue;
-      return Uri.encodeFull(ApiConfig.normalizeAssetUrl(value));
+      if (value.isNotEmpty) {
+        return value;
+      }
     }
 
     return '';
   }
 
+  String _resolveImageUrl(Map<String, dynamic> doc) {
+    final raw = _resolveRawFileValue(doc);
+    if (raw.isEmpty) return '';
+    return ApiConfig.normalizeAssetUrl(raw);
+  }
+
+  String _resolveFileKind(Map<String, dynamic> doc) {
+    final rawValue = _resolveRawFileValue(doc);
+    final normalized = Uri.decodeFull(rawValue).toLowerCase();
+
+    if (_imageExtPattern.hasMatch(normalized)) return 'image';
+    if (_pdfExtPattern.hasMatch(normalized)) return 'pdf';
+    if (_docxExtPattern.hasMatch(normalized)) return 'docx';
+    return 'other';
+  }
+
   void _showFilePreview(Map<String, dynamic> doc) {
     final url = _resolveImageUrl(doc);
+    final fileKind = _resolveFileKind(doc);
 
     showDialog(
       context: context,
@@ -284,16 +315,73 @@ class _VerificationScreenState extends State<VerificationScreen>
           height: 620,
           child: url.isEmpty
               ? const Center(child: Text('No preview available'))
-              : InteractiveViewer(
-                  minScale: 0.8,
-                  maxScale: 4.0,
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        const Center(child: Text('Unable to load image')),
-                  ),
+              : fileKind == 'image'
+                  ? InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 4.0,
+                      child: Image.network(
+                        url,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Text('Unable to load image'),
+                        ),
+                      ),
+                    )
+                  : _buildFilePreviewFallback(fileKind, url),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilePreviewFallback(String fileKind, String url) {
+    final icon = fileKind == 'pdf'
+        ? Icons.picture_as_pdf_outlined
+        : fileKind == 'docx'
+            ? Icons.description_outlined
+            : Icons.insert_drive_file_outlined;
+    final label = fileKind == 'pdf'
+        ? 'PDF document'
+        : fileKind == 'docx'
+            ? 'DOCX document'
+            : 'Document file';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 64, color: const Color(0xFF6A5A79)),
+              const SizedBox(height: 12),
+              Text(
+                '$label detected. In-app image preview is only available for image files.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              SelectableText(
+                url,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF5E35B1),
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: url));
+                  _showSnackBar(
+                    'File URL copied. Open it in a new browser tab.',
+                    const Color(0xFF2E7D32),
+                  );
+                },
+                icon: const Icon(Icons.copy_all_rounded),
+                label: const Text('Copy file URL'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -388,6 +476,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                 final compact = constraints.maxWidth < 900;
                 final content = [
                   _buildThumbnail(
+                    doc,
                     imageUrl,
                     onTap: () => _showFilePreview(doc),
                   ),
@@ -402,6 +491,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildThumbnail(
+                        doc,
                         imageUrl,
                         onTap: () => _showFilePreview(doc),
                       ),
@@ -682,7 +772,23 @@ class _VerificationScreenState extends State<VerificationScreen>
   // Old ListView-based layout replaced by a sliver list so the entire module
   // (header + summary + list) scrolls correctly inside the admin shell.
 
-  Widget _buildThumbnail(String imageUrl, {required VoidCallback onTap}) {
+  Widget _buildThumbnail(
+    Map<String, dynamic> doc,
+    String imageUrl, {
+    required VoidCallback onTap,
+  }) {
+    final fileKind = _resolveFileKind(doc);
+    final icon = fileKind == 'pdf'
+        ? Icons.picture_as_pdf_outlined
+        : fileKind == 'docx'
+            ? Icons.description_outlined
+            : Icons.image_not_supported_outlined;
+    final label = fileKind == 'pdf'
+        ? 'PDF'
+        : fileKind == 'docx'
+            ? 'DOCX'
+            : 'FILE';
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
@@ -698,13 +804,33 @@ class _VerificationScreenState extends State<VerificationScreen>
           borderRadius: BorderRadius.circular(10),
           child: imageUrl.isEmpty
               ? const Center(child: Text("No image"))
-              : Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Icon(Icons.broken_image_outlined, color: Colors.grey),
-                  ),
-                ),
+              : fileKind == 'image'
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(icon, color: const Color(0xFF6A5A79), size: 26),
+                          const SizedBox(height: 4),
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: Color(0xFF6A5A79),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
         ),
       ),
     );
