@@ -54,14 +54,6 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     return true;
   }
 
-  String _requirementIdForDocType(String value) {
-    final v = value.toLowerCase();
-    if (v.contains('report') && v.contains('grade')) return '0';
-    if (v.contains('renewal')) return '1';
-    if (v.contains('enrollment')) return '2';
-    return '';
-  }
-
   // --- 1. PICK IMAGE ---
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -149,10 +141,6 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       // Sending all required fields to match your database columns
       request.fields['user_id'] = widget.userId;
       request.fields['document_type'] = _selectedDocType;
-      final requirementId = _requirementIdForDocType(_selectedDocType);
-      if (requirementId.isNotEmpty) {
-        request.fields['requirement_id'] = requirementId;
-      }
       request.fields['academic_term'] = _selectedTerm;
       request.fields['remarks'] = _remarksController.text;
       if (extractedText.isNotEmpty) {

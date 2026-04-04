@@ -65,14 +65,6 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
     return true;
   }
 
-  String _requirementIdForDocType(String value) {
-    final v = value.toLowerCase();
-    if (v.contains('report') && v.contains('grade')) return '0';
-    if (v.contains('renewal')) return '1';
-    if (v.contains('enrollment')) return '2';
-    return '';
-  }
-
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -133,10 +125,6 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
 
       request.fields['user_id'] = widget.userId;
       request.fields['document_type'] = selectedDocType;
-      final requirementId = _requirementIdForDocType(selectedDocType);
-      if (requirementId.isNotEmpty) {
-        request.fields['requirement_id'] = requirementId;
-      }
       request.fields['academic_term'] = selectedAcademicTerm;
       request.fields['original_filename'] = _selectedFile!.name;
       final remarks = _remarksController.text.trim();
@@ -388,7 +376,6 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
                       const [
                         'Report of Grades',
                         'Renewal Letter',
-                        'Enrollment Form',
                       ],
                       (value) => setState(() => selectedDocType = value!),
                     );

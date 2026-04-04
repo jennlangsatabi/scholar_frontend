@@ -48,17 +48,29 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           child: Text(
             text,
             overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2D0D44),
+            ),
           ),
         ),
         const SizedBox(width: 6),
-        IconButton(
-          icon: const Icon(Icons.edit, size: 16, color: Colors.grey),
-          onPressed: onPressed,
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          splashRadius: 18,
-          tooltip: onPressed == null ? null : 'Edit',
+        InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2ECF8),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0xFFE1D6EB)),
+            ),
+            child: const Icon(
+              Icons.edit_outlined,
+              size: 14,
+              color: Color(0xFF6A1B9A),
+            ),
+          ),
         ),
       ],
     );
@@ -66,14 +78,19 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
   Widget _tableHeaderCell(String label) {
     return SizedBox(
-      height: 64,
+      height: 66,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13.5,
+              letterSpacing: 0.2,
+              color: Color(0xFF2D0D44),
+            ),
           ),
         ),
       ),
@@ -82,7 +99,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
   Widget _tableBodyCell(Widget child) {
     return SizedBox(
-      height: 62,
+      height: 66,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Align(
@@ -1180,25 +1197,32 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             filtered
                 .every((s) => _normalizedCategory(s) == 'gift_of_education'));
     final scholarRows = filtered
-        .map((s) => _scholarRow(
-              _fullName(s),
-              _courseYear(s),
-              _latestSubmission(s),
-              _gradeStatus(s),
-              _renewalStatus(s),
-              _remarksStatus(s),
-              showDutyHours,
-              _normalizedCategory(s) == 'student_assistant',
-              false,
-              _userId(s),
-              _renderedHours(s),
-              _remainingHours(s),
-              (s['supervisor'] ?? '—').toString(),
-              (s['sport_type'] ?? '—').toString(),
-              (s['head_coach'] ?? '—').toString(),
-              (s['training_schedule'] ?? '—').toString(),
-              (s['game_schedule'] ?? '—').toString(),
-            ))
+        .asMap()
+        .entries
+        .map((entry) {
+          final index = entry.key;
+          final s = entry.value;
+          return _scholarRow(
+            index,
+            _fullName(s),
+            _courseYear(s),
+            _latestSubmission(s),
+            _gradeStatus(s),
+            _renewalStatus(s),
+            _remarksStatus(s),
+            showDutyHours,
+            _normalizedCategory(s) == 'student_assistant',
+            false,
+            _userId(s),
+            _renderedHours(s),
+            _remainingHours(s),
+            (s['supervisor'] ?? '—').toString(),
+            (s['sport_type'] ?? '—').toString(),
+            (s['head_coach'] ?? '—').toString(),
+            (s['training_schedule'] ?? '—').toString(),
+            (s['game_schedule'] ?? '—').toString(),
+          );
+        })
         .toList();
 
     final categorySummary = ignoreCategory ? _categorySummary(filtered) : null;
@@ -1211,6 +1235,11 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Column(
             children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _buildBackButton(backTarget ?? parentView),
+          ),
+          const SizedBox(height: 6),
           if (titleOverride != null)
             Align(
               alignment: Alignment.centerLeft,
@@ -1291,11 +1320,23 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                               ),
                               child: DataTable(
                                 headingRowColor: WidgetStateProperty.all(
-                                  const Color(0xFFF8F5FB),
+                                  const Color(0xFFF7F3FC),
                                 ),
+                                dividerThickness: 0.8,
+                                horizontalMargin: 20,
+                                headingRowHeight: 66,
+                                dataRowMinHeight: 64,
+                                dataRowMaxHeight: 70,
                                 columnSpacing: 30,
-                                headingRowHeight: 70,
-                                dataRowHeight: 65,
+                                headingTextStyle: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  color: Color(0xFF2D0D44),
+                                ),
+                                dataTextStyle: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF2D0D44),
+                                ),
                                 columns: [
                                   const DataColumn(
                                     label: Text(
@@ -1411,7 +1452,6 @@ class _MonitoringScreenState extends State<MonitoringScreen>
               ],
             ),
           ),
-          _buildBottomBackButton(backTarget ?? parentView),
         ],
           ),
         );
@@ -1422,18 +1462,25 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   Widget _statusChip(String label, String value) {
     final selected = _submissionFilter == value;
     return ChoiceChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 13.5),
+      ),
       selected: selected,
       onSelected: (_) {
         if (!mounted) return;
         setState(() => _submissionFilter = value);
       },
-      selectedColor: const Color(0xFF6A1B9A).withOpacity(0.18),
+      selectedColor: const Color(0xFF6A1B9A).withOpacity(0.16),
+      backgroundColor: Colors.white,
       labelStyle: TextStyle(
         fontWeight: FontWeight.w700,
         color: selected ? const Color(0xFF4A148C) : const Color(0xFF2D0D44),
       ),
-      side: const BorderSide(color: Color(0xFFE1D6EB)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      side: BorderSide(
+        color: selected ? const Color(0xFFBFA6D9) : const Color(0xFFE1D6EB),
+      ),
     );
   }
 
@@ -2564,41 +2611,21 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
   Widget _buildBackButton(String target) {
     return Padding(
-      padding: const EdgeInsets.only(left: 30),
+      padding: const EdgeInsets.only(left: 0),
       child: TextButton.icon(
-        onPressed: () => setState(() => currentView = target),
+        onPressed: () {
+          setState(() {
+            currentView = target;
+            if (target == 'main') {
+              searchQuery = '';
+              _searchController.clear();
+            }
+          });
+        },
         icon: const Icon(Icons.arrow_back, color: Color(0xFF4A148C)),
         label: const Text('Back',
             style: TextStyle(
                 color: Color(0xFF4A148C), fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _buildBottomBackButton(String target) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Align(
-        alignment: Alignment.bottomRight,
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() {
-              currentView = target;
-              if (target == 'main') {
-                searchQuery = '';
-                _searchController.clear();
-              }
-            });
-          },
-          style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6A1B9A),
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8))),
-          child: const Text('Return to Categories',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
       ),
     );
   }
@@ -2641,6 +2668,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   }
 
   DataRow _scholarRow(
+      int rowIndex,
       String name,
       String cy,
       String date,
@@ -2664,10 +2692,31 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         remarksKey.contains('pending') ||
         remarksKey.contains('notify');
 
-    return DataRow(cells: [
-      DataCell(Text(name, style: const TextStyle(fontWeight: FontWeight.w500))),
-      DataCell(Text(cy)),
-      DataCell(Text(date)),
+    final zebra = rowIndex.isEven ? Colors.white : const Color(0xFFFCFAFF);
+    return DataRow(
+      color: WidgetStateProperty.all(zebra),
+      cells: [
+      DataCell(
+        Text(
+          name,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2D0D44),
+          ),
+        ),
+      ),
+      DataCell(
+        Text(
+          cy,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      DataCell(
+        Text(
+          date,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
 
       // Supervisor and Duty Hours logic
       if (showDutyHours) ...[
@@ -2676,7 +2725,10 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           isRowSA
               ? Row(
                   children: [
-                    Text(supervisor),
+                    Text(
+                      supervisor,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     IconButton(
                       icon:
                           const Icon(Icons.edit, size: 16, color: Colors.grey),
@@ -2703,7 +2755,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                           ? '0/400'
                           : rendered.toString(),
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           color: Color(0xFF4A148C)),
                     ),
                     IconButton(
@@ -2725,30 +2777,58 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         ),
       ],
       if (isRowVarsity) ...[
-        DataCell(Text(sport)),
-        DataCell(Text(headCoach)),
-        DataCell(Text(trainingSchedule)),
-        DataCell(Text(gameSchedule)),
+        DataCell(Text(sport, style: const TextStyle(fontWeight: FontWeight.w600))),
+        DataCell(Text(headCoach, style: const TextStyle(fontWeight: FontWeight.w600))),
+        DataCell(Text(trainingSchedule, style: const TextStyle(fontWeight: FontWeight.w600))),
+        DataCell(Text(gameSchedule, style: const TextStyle(fontWeight: FontWeight.w600))),
       ],
-      DataCell(Text(grade)),
-      DataCell(Text(renewal)),
+      DataCell(_statusPill(grade, kind: 'grade')),
+      DataCell(_statusPill(renewal, kind: 'renewal')),
       DataCell(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: isUrgent
-                ? Colors.red.withOpacity(0.1)
-                : Colors.green.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(remarks,
-              style: TextStyle(
-                  color: isUrgent ? Colors.red : Colors.green,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12)),
-        ),
+        _statusPill(remarks, kind: isUrgent ? 'bad' : 'good'),
       ),
     ]);
+  }
+
+  Widget _statusPill(String value, {required String kind}) {
+    final text = value.trim().isEmpty ? '—' : value.trim();
+    Color fg = const Color(0xFF2D0D44);
+    Color bg = const Color(0xFFF2ECF8);
+    Color border = const Color(0xFFE1D6EB);
+
+    final lower = text.toLowerCase();
+    if (kind == 'bad' || lower.contains('missing') || lower.contains('reject')) {
+      fg = const Color(0xFFB71C1C);
+      bg = const Color(0xFFFFEBEE);
+      border = const Color(0xFFFFCDD2);
+    } else if (kind == 'good' || lower.contains('complete') || lower.contains('approved') || lower.contains('passed')) {
+      fg = const Color(0xFF1B5E20);
+      bg = const Color(0xFFE8F5E9);
+      border = const Color(0xFFC8E6C9);
+    } else if (lower.contains('pending') || lower.contains('verify')) {
+      fg = const Color(0xFFEF6C00);
+      bg = const Color(0xFFFFF3E0);
+      border = const Color(0xFFFFCC80);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+          color: fg,
+        ),
+      ),
+    );
   }
 
   List<Map<String, dynamic>> _filterScholars({bool ignoreCategory = false}) {

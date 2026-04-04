@@ -391,11 +391,36 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
           Navigator.of(context).pop();
         }
         if (isLogout) {
-          widget.onLogout();
+          _confirmLogout();
         } else {
           setState(() => activePage = label);
         }
       },
+    );
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Logout"),
+        content:
+            const Text("Are you sure you want to exit the scholar panel?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onLogout();
+            },
+            child: const Text("Logout"),
+          ),
+        ],
+      ),
     );
   }
 
