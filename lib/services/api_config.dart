@@ -53,10 +53,41 @@ class ApiConfig {
       return parsed.replace(scheme: forcedScheme).toString();
     }
 
-    final normalizedPath = value.replaceAll('\\', '/').replaceFirst(
-      RegExp(r'^/?'),
-      '',
-    );
-    return base.resolve(normalizedPath).toString();
+    final basePath = base.path.replaceAll(RegExp(r'^/+|/+$'), '');
+    final withTrailingSlash = base.path.endsWith('/')
+        ? base
+        : base.replace(path: '${base.path}/');
+    final origin = Uri.parse(base.origin);
+
+    var normalizedPath = value.replaceAll('\\', '/').trim();
+    final lowerPath = normalizedPath.toLowerCase();
+
+    // Some backends return local Windows file paths. Convert those into
+    // web-facing paths anchored to /scholar_php or /uploads when possible.
+    final scholarPhpIndex = lowerPath.lastIndexOf('/scholar_php/');
+    if (scholarPhpIndex >= 0) {
+      normalizedPath = normalizedPath.substring(scholarPhpIndex);
+    } else {
+      final uploadsIndex = lowerPath.lastIndexOf('/uploads/');
+      if (uploadsIndex >= 0) {
+        normalizedPath = normalizedPath.substring(uploadsIndex);
+      }
+    }
+
+    if (normalizedPath.startsWith('/')) {
+      if (basePath.isNotEmpty &&
+          normalizedPath.startsWith('/uploads/')) {
+        return origin.resolve('/$basePath$normalizedPath').toString();
+      }
+      return origin.resolve(normalizedPath).toString();
+    }
+
+    if (basePath.isNotEmpty &&
+        (normalizedPath == basePath ||
+            normalizedPath.startsWith('$basePath/'))) {
+      return origin.resolve('/$normalizedPath').toString();
+    }
+
+    return withTrailingSlash.resolve(normalizedPath).toString();
   }
 }
