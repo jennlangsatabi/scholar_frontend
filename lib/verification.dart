@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'services/api_config.dart';
@@ -10,41 +12,77 @@ class VerificationScreen extends StatefulWidget {
   State<VerificationScreen> createState() => _VerificationScreenState();
 }
 
-class _VerificationScreenState extends State<VerificationScreen> {
+class _VerificationScreenState extends State<VerificationScreen>
+    with WidgetsBindingObserver {
+  static const Duration _pollInterval = Duration(seconds: 8);
+
   List<Map<String, dynamic>> pendingDocs = [];
   Map<int, String> _scholarNameByUserId = {};
   bool isLoading = true;
   String errorMessage = "";
+  bool _isFetching = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     fetchPendingDocuments();
+    _pollTimer = Timer.periodic(
+      _pollInterval,
+      (_) => fetchPendingDocuments(silent: true),
+    );
   }
 
-  Future<void> fetchPendingDocuments() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = "";
-    });
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      fetchPendingDocuments(silent: true);
+    }
+  }
+
+  Future<void> fetchPendingDocuments({bool silent = false}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+
+    if (mounted && (!silent || pendingDocs.isEmpty)) {
+      setState(() {
+        isLoading = true;
+        errorMessage = "";
+      });
+    }
 
     try {
       await _fetchScholarDirectory();
       final list = await BackendApi.getList(
         'get_pending_verifications.php',
-        cacheTtl: const Duration(seconds: 10),
+        cacheTtl: const Duration(seconds: 5),
         retries: 1,
       );
 
+      if (!mounted) return;
       setState(() {
         pendingDocs = list;
         isLoading = false;
+        errorMessage = "";
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        errorMessage = "Connection error: ${e.toString()}";
+        if (!silent || pendingDocs.isEmpty) {
+          errorMessage = "Connection error: ${e.toString()}";
+        }
         isLoading = false;
       });
+    } finally {
+      _isFetching = false;
     }
   }
 
@@ -89,7 +127,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       }
 
       _showSnackBar("Status updated to $newStatus", Colors.green);
-      fetchPendingDocuments();
+      await fetchPendingDocuments(silent: true);
     } catch (e) {
       _showSnackBar("Update failed: $e", Colors.red);
     }
