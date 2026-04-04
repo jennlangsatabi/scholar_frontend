@@ -50,6 +50,20 @@ class ApiConfig {
       }
 
       final forcedScheme = base.scheme.isNotEmpty ? base.scheme : 'https';
+      final host = parsed.host.toLowerCase();
+      final isLoopbackHost =
+          host == 'localhost' || host == '127.0.0.1' || host == '::1';
+
+      if (isLoopbackHost && parsed.host != base.host) {
+        return parsed
+            .replace(
+              scheme: forcedScheme,
+              host: base.host,
+              port: base.hasPort ? base.port : null,
+            )
+            .toString();
+      }
+
       return parsed.replace(scheme: forcedScheme).toString();
     }
 
