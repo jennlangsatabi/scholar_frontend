@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'dashboard_components.dart';
@@ -271,7 +273,7 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
   Widget _buildFormalContentBox(
       {required String title, required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(25),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -300,57 +302,84 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
   }
 
   Widget _buildEducationStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: DashProps.statBox(
-            "General Weighted Ave.",
-            "1.25",
-            const Color(0xFFE9E59B), // Light Yellow
-            Colors.black,
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: DashProps.statBox(
-            "Total Units",
-            "21",
-            const Color(0xFFD7BDE2), // Light Lavender
-            Colors.black,
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: DashProps.statBox(
-            "Scholarship Status",
-            "Qualified",
-            const Color(0xFF90C2C2), // Muted Teal
-            const Color(0xFF2E7D32), // Dark Green
-          ),
-        ),
-      ],
+    const spacing = 12.0;
+
+    final cards = [
+      DashProps.statBox(
+        "General Weighted Ave.",
+        "1.25",
+        const Color(0xFFE9E59B), // Light Yellow
+        Colors.black,
+      ),
+      DashProps.statBox(
+        "Total Units",
+        "21",
+        const Color(0xFFD7BDE2), // Light Lavender
+        Colors.black,
+      ),
+      DashProps.statBox(
+        "Scholarship Status",
+        "Qualified",
+        const Color(0xFF90C2C2), // Muted Teal
+        const Color(0xFF2E7D32), // Dark Green
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth < 520 ? 2 : 3;
+        final itemWidth =
+            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: cards
+              .map((card) => SizedBox(width: itemWidth, child: card))
+              .toList(growable: false),
+        );
+      },
     );
   }
 
   Widget _submissionRow(
       String fileName, String status, Color bgColor, Color textColor) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Text(fileName,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF2D0D44))),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: textColor.withOpacity(0.3)),
-          ),
           child: Text(
-            status,
-            style: TextStyle(
-                fontSize: 12, fontWeight: FontWeight.bold, color: textColor),
+            fileName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF2D0D44)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 92),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              height: 28,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: textColor.withOpacity(0.3)),
+              ),
+              child: Center(
+                child: Text(
+                  status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],

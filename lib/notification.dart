@@ -224,29 +224,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     _notifyUnreadCount();
 
-    final endpoints = [
-      Uri.parse("${_baseUrl}mark_notification_read.php"),
-      Uri.parse("${_baseUrl}set_notification_read.php"),
-      Uri.parse("${_baseUrl}update_notification_status.php"),
-    ];
-
     unawaited(
-      Future.wait(
-        endpoints.map((url) async {
-          try {
-            await http
-                .post(url, body: {
+      () async {
+        try {
+          await http
+              .post(
+                Uri.parse("${_baseUrl}mark_notification_read.php"),
+                body: {
                   'notification_id': id,
                   'user_id': widget.userId,
                   'is_read': read ? '1' : '0',
-                  'status': read ? 'read' : 'unread',
-                })
-                .timeout(const Duration(seconds: 8));
-          } catch (_) {
-            // Keep local state even if backend fallback fails.
-          }
-        }),
-      ),
+                },
+              )
+              .timeout(const Duration(seconds: 8));
+        } catch (_) {
+          // Keep local state even if backend call fails.
+        }
+      }(),
     );
   }
 
@@ -256,28 +250,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     _notifyUnreadCount();
 
-    final endpoints = [
-      Uri.parse("${_baseUrl}mark_all_notifications_read.php"),
-      Uri.parse("${_baseUrl}set_all_notifications_read.php"),
-      Uri.parse("${_baseUrl}update_all_notifications_status.php"),
-    ];
-
     unawaited(
-      Future.wait(
-        endpoints.map((url) async {
-          try {
-            await http
-                .post(url, body: {
+      () async {
+        try {
+          await http
+              .post(
+                Uri.parse("${_baseUrl}mark_all_notifications_read.php"),
+                body: {
                   'user_id': widget.userId,
                   'is_read': read ? '1' : '0',
-                  'status': read ? 'read' : 'unread',
-                })
-                .timeout(const Duration(seconds: 8));
-          } catch (_) {
-            // Keep local state even if backend fallback fails.
-          }
-        }),
-      ),
+                },
+              )
+              .timeout(const Duration(seconds: 8));
+        } catch (_) {
+          // Keep local state even if backend call fails.
+        }
+      }(),
     );
   }
 
@@ -1316,52 +1304,132 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            Row(
-              children: [
-                OutlinedButton.icon(
-                  onPressed: isBusy || _selectionMode
-                      ? null
-                      : () => _replyTo(item),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF2F6B45),
-                    side: const BorderSide(color: Color(0xFF9FD2B0)),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: const Icon(Icons.reply_rounded),
-                  label: const Text('Reply'),
-                ),
-                const SizedBox(width: 10),
-                FilledButton.icon(
-                  onPressed: isBusy || _selectionMode
-                      ? null
-                      : () => _deleteNotification(item),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFD84343),
-                    foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: isBusy
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isTiny = constraints.maxWidth < 320;
+                final isCompact = constraints.maxWidth < 360;
+                final showDeleteLabel = constraints.maxWidth >= 420;
+                const actionHeight = 48.0;
+                const actionRadius = 14.0;
+
+                Widget busyIcon(Color color) => SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    );
+
+                final replyButton = (isTiny || isCompact)
+                    ? SizedBox(
+                        width: actionHeight,
+                        height: actionHeight,
+                        child: OutlinedButton(
+                          onPressed: isBusy || _selectionMode
+                              ? null
+                              : () => _replyTo(item),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2F6B45),
+                            side: const BorderSide(color: Color(0xFF9FD2B0)),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(actionRadius),
+                            ),
                           ),
-                        )
-                      : const Icon(Icons.delete_outline_rounded),
-                  label: Text(isBusy ? 'Working...' : 'Delete'),
-                ),
-              ],
+                          child: const Tooltip(
+                            message: 'Reply',
+                            child: Icon(Icons.reply_rounded),
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: actionHeight,
+                        child: OutlinedButton.icon(
+                          onPressed: isBusy || _selectionMode
+                              ? null
+                              : () => _replyTo(item),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2F6B45),
+                            side: const BorderSide(color: Color(0xFF9FD2B0)),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(actionRadius),
+                            ),
+                          ),
+                          icon: const Icon(Icons.reply_rounded),
+                          label: const Text('Reply'),
+                        ),
+                      );
+
+                final deleteIcon = isBusy
+                    ? busyIcon(Colors.white)
+                    : const Icon(Icons.delete_outline_rounded, size: 20);
+
+                final deleteButton = (isTiny || !showDeleteLabel)
+                    ? SizedBox(
+                        width: actionHeight,
+                        height: actionHeight,
+                        child: FilledButton(
+                          onPressed: isBusy || _selectionMode
+                              ? null
+                              : () => _deleteNotification(item),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFD84343),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(actionRadius),
+                            ),
+                          ),
+                          child: Tooltip(
+                            message: 'Delete',
+                            child: deleteIcon,
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: actionHeight,
+                        child: FilledButton.icon(
+                          onPressed: isBusy || _selectionMode
+                              ? null
+                              : () => _deleteNotification(item),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFD84343),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(actionRadius),
+                            ),
+                          ),
+                          icon: deleteIcon,
+                          label: const Text(
+                            'Delete',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      );
+
+                if (isTiny || isCompact) {
+                  return Row(
+                    children: [
+                      replyButton,
+                      const Spacer(),
+                      deleteButton,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: replyButton),
+                    const SizedBox(width: 10),
+                    deleteButton,
+                  ],
+                );
+              },
             ),
           ],
         ),

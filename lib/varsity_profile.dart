@@ -142,42 +142,53 @@ class _VarsityProfileScreenState extends State<VarsityProfileScreen> {
           children: [
             _heroProfileHeader(),
             Padding(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width < 600 ? 16 : 40,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 15,
-                    runSpacing: 15,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      buildProfileDropdown(
-                        selectedSemester,
-                        "Select Semester",
-                        semesters,
-                        (val) => setState(() {
-                          selectedSemester = val;
-                          isFiltered = false;
-                        }),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => setState(() => isFiltered = true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFAB47BC),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 22,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 520;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: buildProfileDropdown(
+                              selectedSemester,
+                              "Select Semester",
+                              semesters,
+                              (val) => setState(() {
+                                selectedSemester = val;
+                                isFiltered = false;
+                              }),
+                              width: null,
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          "Filter",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  setState(() => isFiltered = true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFAB47BC),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isNarrow ? 18 : 40,
+                                ),
+                              ),
+                              child: const Text(
+                                "Filter",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   _buildMainContent(),

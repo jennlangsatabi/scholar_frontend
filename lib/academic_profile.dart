@@ -164,70 +164,67 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
           children: [
             _heroProfileHeader(),
             Padding(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width < 600 ? 16 : 40,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 15,
-                    runSpacing: 15,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Container(
-                        width: 250,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: DropdownButton<String>(
-                          value: selectedSemester,
-                          hint: const Text("Select Semester"),
-                          isExpanded: true,
-                          underline: const SizedBox(),
-                          items: semesters.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue == null) return;
-                            setState(() {
-                              selectedSemester = newValue;
-                              isFiltered = false;
-                            });
-                          },
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (selectedSemester != null) {
-                            setState(() => isFiltered = true);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please select a semester first"),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 520;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: buildProfileDropdown(
+                              selectedSemester,
+                              "Select Semester",
+                              semesters,
+                              (val) {
+                                if (val == null) return;
+                                setState(() {
+                                  selectedSemester = val;
+                                  isFiltered = false;
+                                });
+                              },
+                              width: null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (selectedSemester != null) {
+                                  setState(() => isFiltered = true);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Please select a semester first",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFAB47BC),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isNarrow ? 18 : 40,
+                                ),
                               ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFAB47BC),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 22,
+                              child: const Text(
+                                "Filter",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          "Filter",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   _buildMainContent(),

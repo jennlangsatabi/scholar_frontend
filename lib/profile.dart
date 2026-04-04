@@ -242,39 +242,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _heroProfileHeader(),
             Padding(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width < 600 ? 16 : 40,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 15,
-                    runSpacing: 15,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      buildProfileDropdown(
-                        selectedSemester,
-                        "Select Semester",
-                        semesters,
-                        (val) => setState(() => selectedSemester = val),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => setState(() => isFiltered = true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFAB47BC),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 22,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 520;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: buildProfileDropdown(
+                              selectedSemester,
+                              "Select Semester",
+                              semesters,
+                              (val) => setState(() => selectedSemester = val),
+                              width: null,
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          "Filter",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  setState(() => isFiltered = true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFAB47BC),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isNarrow ? 18 : 40,
+                                ),
+                              ),
+                              child: const Text(
+                                "Filter",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   _buildMainContent(),
@@ -662,75 +673,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final giftScholarshipLabel = ScholarshipTypes.giftTypeLabel(giftType);
 
     return _profileCard(
-      Column(
-        children: [
-          // Table Headers
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _tableHeader("Scholarship Type"),
-                // Conditional Headers based on scholar type
-                _tableHeader(
-                    isGiftOfEducation ? "Grant Coverage" : "Duty Hours"),
-                _tableHeader(
-                    isGiftOfEducation ? "Retention GWA" : "Supervisor"),
-                _tableHeader(
-                    isGiftOfEducation ? "Renewal Status" : "Required Hours"),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF3E5F5)),
-          // Table Values
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _tableValue(isGiftOfEducation
-                    ? (giftScholarshipLabel.isEmpty
-                        ? "Gift of Education"
-                        : giftScholarshipLabel)
-                    : scholarRole),
-                _tableValue(isGiftOfEducation ? giftGrantCoverage : rows[0][1]),
-                _tableValue(isGiftOfEducation ? giftRetentionGwa : rows[0][2]),
-                _tableValue(isGiftOfEducation ? giftRenewalStatus : rows[0][3]),
-              ],
-            ),
-          ),
+      ProfileDataTable(
+        headers: [
+          "Scholarship Type",
+          isGiftOfEducation ? "Grant Coverage" : "Duty Hours",
+          isGiftOfEducation ? "Retention GWA" : "Supervisor",
+          isGiftOfEducation ? "Renewal Status" : "Required Hours",
+        ],
+        rows: [
+          [
+            isGiftOfEducation
+                ? (giftScholarshipLabel.isEmpty
+                    ? "Gift of Education"
+                    : giftScholarshipLabel)
+                : scholarRole,
+            isGiftOfEducation ? giftGrantCoverage : rows[0][1],
+            isGiftOfEducation ? giftRetentionGwa : rows[0][2],
+            isGiftOfEducation ? giftRenewalStatus : rows[0][3],
+          ]
         ],
       ),
     );
   }
 
-  // Helper widget for Header Styling
-  Widget _tableHeader(String label) {
-    return Expanded(
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-          color: Color(0xFF2D0D44),
-        ),
-      ),
-    );
-  }
-
-  // Helper widget for Value Styling
-  Widget _tableValue(String value) {
-    return Expanded(
-      child: Text(
-        value,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
 }

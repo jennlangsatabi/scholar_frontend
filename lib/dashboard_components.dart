@@ -15,24 +15,42 @@ class DashProps {
       );
 
   // Use this for the colored Stat Boxes
-  static Widget statBox(String label, String value, Color bg, Color textC) =>
-      Expanded(
-        child: Container(
-          height: 150,
-          decoration:
-              BoxDecoration(color: bg, borderRadius: BorderRadius.circular(5)),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold, color: textC)),
-            ],
-          ),
+  static Widget statBox(String label, String value, Color bg, Color textC,
+          {double height = 140}) =>
+      Container(
+        height: height,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: textC,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
 

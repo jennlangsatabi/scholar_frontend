@@ -188,6 +188,20 @@ class ProfileDataTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isMobile = width < 560;
+
+        if (isMobile) {
+          return _buildMobileCards(context, width);
+        }
+        return _buildDesktopTable();
+      },
+    );
+  }
+
+  Widget _buildDesktopTable() {
     return Container(
       decoration: BoxDecoration(
           color: Colors.white,
@@ -206,6 +220,102 @@ class ProfileDataTable extends StatelessWidget {
                 children: row.map((cell) => _buildCell(cell, false)).toList(),
               )),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMobileCards(BuildContext context, double width) {
+    final labelFontSize = (width * 0.034).clamp(11.5, 13.5);
+    final valueFontSize = (width * 0.038).clamp(12.5, 15.0);
+    final labelWidth = (width * 0.40).clamp(120.0, 170.0);
+
+    final labelStyle = TextStyle(
+      fontWeight: FontWeight.w800,
+      color: const Color(0xFF2D0D44),
+      fontSize: labelFontSize,
+    );
+    final valueStyle = TextStyle(
+      fontWeight: FontWeight.w600,
+      color: Colors.black87,
+      fontSize: valueFontSize,
+      height: 1.25,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            ...rows.asMap().entries.map((entry) {
+              final rowIndex = entry.key;
+              final row = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(bottom: rowIndex == rows.length - 1 ? 0 : 12),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE6DFF0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      children: [
+                        ...headers.asMap().entries.map((headerEntry) {
+                          final i = headerEntry.key;
+                          final header = headerEntry.value;
+                          final value =
+                              i < row.length ? row[i].toString() : '';
+
+                          return Padding(
+                            padding: EdgeInsets.only(top: i == 0 ? 0 : 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: labelWidth,
+                                  child: Text(
+                                    header,
+                                    style: labelStyle,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    value.isEmpty ? '\u2014' : value,
+                                    textAlign: TextAlign.right,
+                                    style: valueStyle,
+                                    softWrap: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -246,10 +356,15 @@ Widget buildEmptyState(String message) {
 }
 
 // 4. Helper: Dropdown Widget
-Widget buildProfileDropdown(String? value, String hint, List<String> items,
-    void Function(String?) onChanged) {
+Widget buildProfileDropdown(
+  String? value,
+  String hint,
+  List<String> items,
+  void Function(String?) onChanged, {
+  double? width = 250,
+}) {
   return Container(
-    width: 250,
+    width: width,
     padding: const EdgeInsets.symmetric(horizontal: 15),
     decoration: BoxDecoration(
       color: Colors.white,
