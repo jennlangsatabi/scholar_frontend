@@ -24,11 +24,22 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   String? _busyId;
   final Set<String> _selectedIds = {};
   bool _selectionMode = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) => _loadNotifications(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadNotifications() async {
@@ -42,7 +53,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         BackendApi.getJson(
           'get_admin_notifications.php',
           query: const {'limit': '120'},
-          cacheTtl: const Duration(seconds: 8),
+          cacheTtl: Duration.zero,
           retries: 1,
         ),
       );
