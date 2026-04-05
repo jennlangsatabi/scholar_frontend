@@ -14,6 +14,21 @@ class BackendApi {
   static final Map<String, Future<dynamic>> _inFlight = <String, Future<dynamic>>{};
   static Future<void>? _warmupFuture;
 
+  static void invalidateCache({String? pathContains}) {
+    if (pathContains == null || pathContains.trim().isEmpty) {
+      _cache.clear();
+      return;
+    }
+
+    final needle = pathContains.trim().toLowerCase();
+    final keysToRemove = _cache.keys
+        .where((key) => key.toLowerCase().contains(needle))
+        .toList(growable: false);
+    for (final key in keysToRemove) {
+      _cache.remove(key);
+    }
+  }
+
   static Future<void> warmUp() {
     // Render free instances often cold-start. Warm the backend while the user is
     // on the login/role screen so the first real action feels snappy.

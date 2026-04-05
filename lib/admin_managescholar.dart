@@ -39,6 +39,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   List<Map<String, dynamic>> _filteredScholars = [];
   bool _isLoading = true;
   bool _isProcessing = false;
+  bool _showArchived = false;
   String _selectedFilterCategory = 'All';
   String _selectedFormCategory = 'Student Assistant';
 
@@ -69,7 +70,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       _scholars = await BackendApi.unwrapList(
         BackendApi.getJson(
           'get_scholars.php',
-          cacheTtl: const Duration(minutes: 2),
+          query: {'archived': _showArchived ? '1' : '0'},
+          cacheTtl: const Duration(seconds: 1),
           retries: 1,
         ),
       );
@@ -189,6 +191,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       final data = await _createScholarWithStatusFallback(payload);
 
       if (data['status'] == 'success') {
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
         setState(() => _selectedFilterCategory = _selectedFormCategory);
         _toast('Scholar added successfully.', Colors.green);
         await fetchScholars();
@@ -240,6 +244,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       );
 
       if (data['status'] == 'success') {
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
         _toast('Scholar updated.', Colors.blue);
         await fetchScholars();
       } else {
@@ -262,6 +268,9 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       );
 
       if (data['status'] == 'success') {
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
+        BackendApi.invalidateCache(pathContains: 'get_pending_verifications.php');
         _toast('Scholar deleted.', Colors.red);
         await fetchScholars();
       } else {
@@ -284,6 +293,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
       );
 
       if (data['status'] == 'success') {
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
         _toast('Scholar archived.', const Color(0xFF8E4B10));
         await fetchScholars();
       } else {
@@ -330,14 +341,19 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   }
 
   void _showDeleteConfirmation(String userId, String name) {
+    final isPermanent = _showArchived;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(
-          "Delete Scholar",
+        title: Text(
+          isPermanent ? "Delete Permanently" : "Delete Scholar",
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        content: Text("Are you sure you want to remove $name?"),
+        content: Text(
+          isPermanent
+              ? "Permanently delete $name? This cannot be undone."
+              : "Are you sure you want to remove $name?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -349,7 +365,10 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
               Navigator.pop(context);
               _deleteScholar(userId);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text(
+              isPermanent ? "Delete Permanently" : "Delete",
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -794,12 +813,30 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           },
         );
         final addButton = FilledButton.icon(
-          onPressed: () {
-            _clearForm();
-            _showFormDialog(title: 'Add New Scholar', onSave: addScholar);
-          },
+          onPressed: _showArchived
+              ? null
+              : () {
+                  _clearForm();
+                  _showFormDialog(title: 'Add New Scholar', onSave: addScholar);
+                },
           icon: const Icon(Icons.person_add_alt_1),
           label: const Text('Add Scholar'),
+        );
+        final archiveToggleButton = OutlinedButton.icon(
+          onPressed: _isProcessing
+              ? null
+              : () async {
+                  setState(() {
+                    _showArchived = !_showArchived;
+                    _selectedFilterCategory = 'All';
+                  });
+                  BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+                  await fetchScholars();
+                },
+          icon: Icon(
+            _showArchived ? Icons.groups_rounded : Icons.archive_outlined,
+          ),
+          label: Text(_showArchived ? 'View Active Scholars' : 'View Archive'),
         );
 
         if (isCompact) {
@@ -809,6 +846,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
               searchField,
               const SizedBox(height: 10),
               categoryFilter,
+              const SizedBox(height: 10),
+              archiveToggleButton,
               const SizedBox(height: 10),
               addButton,
             ],
@@ -821,6 +860,8 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
             const SizedBox(width: 10),
             SizedBox(width: 230, child: categoryFilter),
             const SizedBox(width: 10),
+            archiveToggleButton,
+            const SizedBox(width: 10),
             addButton,
           ],
         );
@@ -832,7 +873,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     final total = _scholars.length;
     final visible = _filteredScholars.length;
     final selectedLabel = _selectedFilterCategory == 'All'
-        ? 'Student Assistants'
+        ? (_showArchived ? 'Archived Scholars' : 'Student Assistants')
         : _selectedFilterCategory;
     final selectedKey = _normalizeCategory(_selectedFilterCategory);
     final selectedCount = _scholars.where((s) {
@@ -1104,6 +1145,24 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     String rawCategory,
     String name,
   ) {
+    if (_showArchived) {
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () => _showDeleteConfirmation(
+              (scholar['user_id'] ?? '').toString(),
+              name,
+            ),
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+            icon: const Icon(Icons.delete_forever, size: 18),
+            label: const Text('Delete Permanently'),
+          ),
+        ],
+      );
+    }
+
     return Wrap(
       spacing: 6,
       runSpacing: 6,
@@ -1172,9 +1231,11 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
               child: Center(child: CircularProgressIndicator()),
             )
           : _filteredScholars.isEmpty
-              ? const Padding(
+              ? Padding(
                   padding: EdgeInsets.all(24),
-                  child: Text('No scholars found for your current filters.'),
+                  child: Text(_showArchived
+                      ? 'No archived scholars found for your current filters.'
+                      : 'No scholars found for your current filters.'),
                 )
               : Column(
                   children: [

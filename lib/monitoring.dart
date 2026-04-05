@@ -15,7 +15,7 @@ class MonitoringScreen extends StatefulWidget {
 
 class _MonitoringScreenState extends State<MonitoringScreen>
     with WidgetsBindingObserver {
-  static const _pollInterval = Duration(seconds: 30);
+  static const _pollInterval = Duration(seconds: 8);
   static const int _maxRowEnrichmentPerRefresh = 20;
   String currentView = 'main';
   String selectedAreaTitle = '';
