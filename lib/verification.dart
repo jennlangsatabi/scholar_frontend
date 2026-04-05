@@ -284,9 +284,8 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   String _resolveSubmittedAt(Map<String, dynamic> doc) {
-    final raw = (doc['submitted_at'] ?? doc['upload_date'] ?? '')
-        .toString()
-        .trim();
+    final raw =
+        (doc['submitted_at'] ?? doc['upload_date'] ?? '').toString().trim();
     if (raw.isEmpty) return '';
 
     DateTime? dt;
@@ -376,7 +375,8 @@ class _VerificationScreenState extends State<VerificationScreen>
       }
 
       if (uploadsPath == null || uploadsPath.isEmpty) {
-        final uploadsIndex = normalizedRaw.toLowerCase().lastIndexOf('/uploads/');
+        final uploadsIndex =
+            normalizedRaw.toLowerCase().lastIndexOf('/uploads/');
         if (uploadsIndex >= 0) {
           uploadsPath = normalizedRaw.substring(uploadsIndex + 1);
         } else if (normalizedRaw.toLowerCase().startsWith('uploads/')) {
@@ -853,7 +853,8 @@ class _VerificationScreenState extends State<VerificationScreen>
             const SizedBox(height: 10),
             Text(errorMessage, textAlign: TextAlign.center),
             const SizedBox(height: 10),
-            FilledButton(onPressed: fetchPendingDocuments, child: const Text("Retry")),
+            FilledButton(
+                onPressed: fetchPendingDocuments, child: const Text("Retry")),
           ],
         ),
       ),
@@ -933,17 +934,14 @@ class _VerificationScreenState extends State<VerificationScreen>
   Widget _buildDocMeta(Map<String, dynamic> doc, String status) {
     final studentName = _resolveStudentName(doc);
     final docType = _resolveDocumentType(doc);
-    final displayDocType = _isRenewalLetter(docType, doc)
-        ? 'Renewal Letter (Not a Report of Grades)'
-        : docType;
+    final displayDocType =
+        _isRenewalLetter(docType, doc) ? 'Renewal Letter' : docType;
     final term = (doc['academic_term'] ?? '').toString();
-    final avg = (doc['computed_average'] ??
-            doc['average'] ??
-            doc['avg'] ??
-            '')
+    final avg = (doc['computed_average'] ?? doc['average'] ?? doc['avg'] ?? '')
         .toString();
     final submittedAt = _resolveSubmittedAt(doc);
-    final showAverage = _isReportOfGrades(docType, doc) && !_isMissingValue(avg);
+    final showAverage =
+        _isReportOfGrades(docType, doc) && !_isMissingValue(avg);
 
     final chips = <Widget>[
       _metaChip("Student: $studentName"),
@@ -1021,7 +1019,8 @@ class _VerificationScreenState extends State<VerificationScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         FilledButton.icon(
-          onPressed: docId.isEmpty ? null : () => updateStatus(docId, 'Approved'),
+          onPressed:
+              docId.isEmpty ? null : () => updateStatus(docId, 'Approved'),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF2E7D32),
           ),
@@ -1030,7 +1029,8 @@ class _VerificationScreenState extends State<VerificationScreen>
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
-          onPressed: docId.isEmpty ? null : () => updateStatus(docId, 'Rejected'),
+          onPressed:
+              docId.isEmpty ? null : () => updateStatus(docId, 'Rejected'),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFFC62828),
           ),
@@ -1072,7 +1072,6 @@ class _ResilientNetworkImageState extends State<_ResilientNetworkImage> {
     return Image.network(
       currentUrl,
       fit: widget.fit,
-      headers: const <String, String>{'Cache-Control': 'no-cache'},
       errorBuilder: (context, error, stackTrace) {
         if (safeIndex < widget.urls.length - 1) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
