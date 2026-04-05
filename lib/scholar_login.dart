@@ -24,6 +24,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
 
   String localScholarType = 'Student Assistant Scholar';
   final List<String> scholarTypes = [
@@ -276,14 +277,27 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   Widget _inputField(
       String hint, IconData icon, TextEditingController controller,
       {bool isObscure = false}) {
+    final isPasswordField = isObscure;
     return TextField(
       controller: controller,
-      obscureText: isObscure,
+      obscureText: isPasswordField ? !_showPassword : false,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white54, fontSize: 14),
         prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+        suffixIcon: isPasswordField
+            ? IconButton(
+                onPressed: () {
+                  setState(() => _showPassword = !_showPassword);
+                },
+                icon: Icon(
+                  _showPassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
