@@ -90,7 +90,8 @@ class ApiConfig {
 
     if (normalizedPath.startsWith('/')) {
       if (basePath.isNotEmpty &&
-          normalizedPath.startsWith('/uploads/')) {
+          (normalizedPath.startsWith('/uploads/') ||
+              normalizedPath.startsWith('/serve_file.php'))) {
         return origin.resolve('/$basePath$normalizedPath').toString();
       }
       return origin.resolve(normalizedPath).toString();
