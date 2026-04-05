@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'dashboard_components.dart';
@@ -19,6 +17,7 @@ class GiftOfEducationDashboard extends StatefulWidget {
 class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
   Timer? _timer;
   DateTime? _lastUpdated;
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +34,28 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (_errorMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFFB74D)),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFF8A4B08),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   _buildEducationStats(),
                   const SizedBox(height: 20),
                   _buildFormalContentBox(
@@ -181,15 +202,15 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
       if (!mounted) return;
       setState(() {
         _lastUpdated = DateTime.now();
+        _errorMessage = null;
       });
     } catch (_) {
       // Keep UI usable even if the refresh endpoint fails.
       if (!mounted) return;
-      if (showLoader) {
-        setState(() {
-          _lastUpdated = DateTime.now();
-        });
-      }
+      setState(() {
+        _errorMessage =
+            'Unable to refresh grant data right now. Please try again.';
+      });
     }
   }
 

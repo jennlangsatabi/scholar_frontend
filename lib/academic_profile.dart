@@ -357,58 +357,62 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
   }
 
   Future<void> _uploadProfileImage() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file == null) return;
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(source: ImageSource.gallery);
+      if (file == null) return;
 
-    if (!mounted) return;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Profile Picture'),
-        content: const Text('Do you want to save this profile picture?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
-    final bytes = await file.readAsBytes();
-    final request = http.MultipartRequest(
-      'POST',
-      ApiConfig.uri('upload_profile_image.php'),
-    );
-    request.fields['user_id'] = widget.userId;
-    request.files.add(
-      http.MultipartFile.fromBytes('image', bytes, filename: file.name),
-    );
-
-    final response = await request.send();
-    final body = await response.stream.bytesToString();
-    if (response.statusCode < 200 || response.statusCode >= 300) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Upload failed: $body')));
-      return;
-    }
-    if (!mounted) return;
-    if (body.isNotEmpty && !body.startsWith('<')) {
-      try {
-        final map = jsonDecode(body) as Map<String, dynamic>;
-        setState(() {
-          profileImageUrl = ApiConfig.normalizeAssetUrl(
-            map['profile_image_url']?.toString(),
-          );
-        });
-      } catch (_) {}
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Save Profile Picture'),
+          content: const Text('Do you want to save this profile picture?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+
+      final bytes = await file.readAsBytes();
+      final request = http.MultipartRequest(
+        'POST',
+        ApiConfig.uri('upload_profile_image.php'),
+      );
+      request.fields['user_id'] = widget.userId;
+      request.files.add(
+        http.MultipartFile.fromBytes('image', bytes, filename: file.name),
+      );
+
+      final response = await request.send();
+      final body = await response.stream.bytesToString();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (!mounted) return;
+        _showErrorSnackBar('Upload failed: $body');
+        return;
+      }
+      if (!mounted) return;
+      if (body.isNotEmpty && !body.startsWith('<')) {
+        try {
+          final map = jsonDecode(body) as Map<String, dynamic>;
+          setState(() {
+            profileImageUrl = ApiConfig.normalizeAssetUrl(
+              map['profile_image_url']?.toString(),
+            );
+          });
+        } catch (_) {}
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorSnackBar('Unable to upload profile image: $e');
     }
   }
 
@@ -470,26 +474,31 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
           ),
           FilledButton(
             onPressed: () async {
-              await BackendApi.postJson(
-                'update_profile.php',
-                body: {
-                  'user_id': widget.userId,
-                  'first_name': firstController.text.trim(),
-                  'middle_name': middleController.text.trim(),
-                  'last_name': lastController.text.trim(),
-                  'course': courseController.text.trim(),
-                  'year_level': yearController.text.trim().isEmpty
-                      ? '1'
-                      : yearController.text.trim(),
-                  'academic_type': _academicPayload(selectedAcademic),
-                  'academic_benefit': benefitController.text.trim(),
-                  'academic_gwa_requirement': gwaController.text.trim(),
-                  'monthly_stipend': stipendController.text.trim(),
-                },
-              );
-              if (!mounted) return;
-              Navigator.pop(context);
-              await _loadProfile();
+              try {
+                await BackendApi.postJson(
+                  'update_profile.php',
+                  body: {
+                    'user_id': widget.userId,
+                    'first_name': firstController.text.trim(),
+                    'middle_name': middleController.text.trim(),
+                    'last_name': lastController.text.trim(),
+                    'course': courseController.text.trim(),
+                    'year_level': yearController.text.trim().isEmpty
+                        ? '1'
+                        : yearController.text.trim(),
+                    'academic_type': _academicPayload(selectedAcademic),
+                    'academic_benefit': benefitController.text.trim(),
+                    'academic_gwa_requirement': gwaController.text.trim(),
+                    'monthly_stipend': stipendController.text.trim(),
+                  },
+                );
+                if (!mounted) return;
+                Navigator.pop(context);
+                await _loadProfile();
+              } catch (e) {
+                if (!mounted) return;
+                _showErrorSnackBar('Unable to save profile changes: $e');
+              }
             },
             child: const Text('Save'),
           ),
@@ -552,6 +561,12 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
     return TextField(
       controller: controller,
       decoration: _modalInputDecoration(label),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

@@ -22,6 +22,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
   List<dynamic> submissionStatus = [];
   Timer? _timer;
   DateTime? _lastUpdated;
+  String? _errorMessage;
 
   Color _shiftLightness(Color base, double delta) {
     final hsl = HSLColor.fromColor(base);
@@ -112,9 +113,15 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
         ], fallback: "Scholarship Office");
         submissionStatus = data['submissions'] ?? [];
         _lastUpdated = DateTime.now();
+        _errorMessage = null;
       });
     } catch (e) {
       debugPrint("Dashboard Sync Error: $e");
+      if (!mounted) return;
+      setState(() {
+        _errorMessage =
+            'Unable to refresh dashboard data right now. Please try again.';
+      });
     }
   }
 
@@ -165,6 +172,28 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
               padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
               child: Column(
                 children: [
+                  if (_errorMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFFB74D)),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFF8A4B08),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   _statStrip(),
                   const SizedBox(height: 20),
                   _submissionPanel(),
