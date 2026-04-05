@@ -308,6 +308,31 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     }
   }
 
+  Future<void> _restoreScholar(String userId) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      final data = await BackendApi.postForm(
+        'restore_scholar.php',
+        body: {"user_id": userId},
+      );
+
+      if (data['status'] == 'success') {
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
+        BackendApi.invalidateCache(pathContains: 'get_pending_verifications.php');
+        _toast('Scholar restored.', Colors.green);
+        await fetchScholars();
+      } else {
+        _toast(data['message']?.toString() ?? 'Restore failed.', Colors.red);
+      }
+    } catch (e) {
+      _toast('Error restoring scholar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   void _toast(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -368,6 +393,36 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
             child: Text(
               isPermanent ? "Delete Permanently" : "Delete",
               style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestoreConfirmation(String userId, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          "Restore Scholar",
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+        ),
+        content: Text("Restore $name to active scholars?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () {
+              Navigator.pop(context);
+              _restoreScholar(userId);
+            },
+            child: const Text(
+              "Restore",
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -1150,6 +1205,15 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         spacing: 6,
         runSpacing: 6,
         children: [
+          OutlinedButton.icon(
+            onPressed: () => _showRestoreConfirmation(
+              (scholar['user_id'] ?? '').toString(),
+              name,
+            ),
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.green),
+            icon: const Icon(Icons.restore_rounded, size: 18),
+            label: const Text('Restore'),
+          ),
           OutlinedButton.icon(
             onPressed: () => _showDeleteConfirmation(
               (scholar['user_id'] ?? '').toString(),
