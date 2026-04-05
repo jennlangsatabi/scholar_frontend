@@ -336,9 +336,40 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   String _resolveImageUrl(Map<String, dynamic> doc) {
+    final urls = _resolveImageUrls(doc);
+    return urls.isEmpty ? '' : urls.first;
+  }
+
+  List<String> _resolveImageUrls(Map<String, dynamic> doc) {
     final raw = _resolveRawFileValue(doc);
-    if (raw.isEmpty) return '';
-    return ApiConfig.normalizeAssetUrl(raw);
+    if (raw.isEmpty) return <String>[];
+
+    final urls = <String>[];
+    void addUrl(String value) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return;
+      if (!urls.contains(trimmed)) {
+        urls.add(trimmed);
+      }
+    }
+
+    addUrl(ApiConfig.normalizeAssetUrl(raw));
+
+    final normalizedRaw = raw.replaceAll('\\', '/').trim();
+    String? uploadsPath;
+    final uploadsIndex = normalizedRaw.toLowerCase().lastIndexOf('/uploads/');
+    if (uploadsIndex >= 0) {
+      uploadsPath = normalizedRaw.substring(uploadsIndex + 1);
+    } else if (normalizedRaw.toLowerCase().startsWith('uploads/')) {
+      uploadsPath = normalizedRaw;
+    }
+
+    if (uploadsPath != null && uploadsPath.isNotEmpty) {
+      addUrl(ApiConfig.uri('serve_file.php', {'path': uploadsPath}).toString());
+      addUrl(ApiConfig.uri(uploadsPath).toString());
+    }
+
+    return urls;
   }
 
   String _resolveFileKind(Map<String, dynamic> doc) {
@@ -352,7 +383,8 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   void _showFilePreview(Map<String, dynamic> doc) {
-    final url = _resolveImageUrl(doc);
+    final urls = _resolveImageUrls(doc);
+    final url = urls.isNotEmpty ? urls.first : '';
     final fileKind = _resolveFileKind(doc);
 
     showDialog(
@@ -368,12 +400,9 @@ class _VerificationScreenState extends State<VerificationScreen>
                   ? InteractiveViewer(
                       minScale: 0.8,
                       maxScale: 4.0,
-                      child: Image.network(
-                        url,
+                      child: _ResilientNetworkImage(
+                        urls: urls,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Text('Unable to load image'),
-                        ),
                       ),
                     )
                   : _buildFilePreviewFallback(fileKind, url),
@@ -503,7 +532,7 @@ class _VerificationScreenState extends State<VerificationScreen>
           }
           final docIndex = index ~/ 2;
           final doc = pendingDocs[docIndex];
-          final imageUrl = _resolveImageUrl(doc);
+          final imageUrls = _resolveImageUrls(doc);
           final status = (doc['admin_status'] ?? 'Pending').toString();
           final docId = (doc['id'] ?? '').toString();
 
@@ -526,7 +555,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                 final content = [
                   _buildThumbnail(
                     doc,
-                    imageUrl,
+                    imageUrls,
                     onTap: () => _showFilePreview(doc),
                   ),
                   const SizedBox(width: 14, height: 14),
@@ -541,7 +570,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                     children: [
                       _buildThumbnail(
                         doc,
-                        imageUrl,
+                        imageUrls,
                         onTap: () => _showFilePreview(doc),
                       ),
                       const SizedBox(height: 12),
@@ -823,7 +852,7 @@ class _VerificationScreenState extends State<VerificationScreen>
 
   Widget _buildThumbnail(
     Map<String, dynamic> doc,
-    String imageUrl, {
+    List<String> imageUrls, {
     required VoidCallback onTap,
   }) {
     final fileKind = _resolveFileKind(doc);
@@ -851,18 +880,12 @@ class _VerificationScreenState extends State<VerificationScreen>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: imageUrl.isEmpty
+          child: imageUrls.isEmpty
               ? const Center(child: Text("No image"))
               : fileKind == 'image'
-                  ? Image.network(
-                      imageUrl,
+                  ? _ResilientNetworkImage(
+                      urls: imageUrls,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.grey,
-                        ),
-                      ),
                     )
                   : Center(
                       child: Column(
@@ -993,6 +1016,56 @@ class _VerificationScreenState extends State<VerificationScreen>
           label: const Text("Reject"),
         ),
       ],
+    );
+  }
+}
+
+class _ResilientNetworkImage extends StatefulWidget {
+  const _ResilientNetworkImage({
+    required this.urls,
+    required this.fit,
+  });
+
+  final List<String> urls;
+  final BoxFit fit;
+
+  @override
+  State<_ResilientNetworkImage> createState() => _ResilientNetworkImageState();
+}
+
+class _ResilientNetworkImageState extends State<_ResilientNetworkImage> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.urls.isEmpty) {
+      return const Center(child: Text('No image'));
+    }
+
+    final safeIndex = _index < 0
+        ? 0
+        : (_index >= widget.urls.length ? widget.urls.length - 1 : _index);
+    final currentUrl = widget.urls[safeIndex];
+
+    return Image.network(
+      currentUrl,
+      fit: widget.fit,
+      headers: const <String, String>{'Cache-Control': 'no-cache'},
+      errorBuilder: (context, error, stackTrace) {
+        if (safeIndex < widget.urls.length - 1) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            setState(() => _index = safeIndex + 1);
+          });
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        }
+        return const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: Colors.grey,
+          ),
+        );
+      },
     );
   }
 }
