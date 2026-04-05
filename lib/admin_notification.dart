@@ -25,6 +25,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   final Set<String> _selectedIds = {};
   bool _selectionMode = false;
   Timer? _pollTimer;
+  String _lastNotificationSignature = '';
 
   @override
   void initState() {
@@ -32,7 +33,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     _loadNotifications();
     _pollTimer = Timer.periodic(
       const Duration(seconds: 8),
-      (_) => _loadNotifications(),
+      (_) => _pollForNewNotifications(),
     );
   }
 
@@ -59,6 +60,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
       );
 
       if (!mounted) return;
+      _lastNotificationSignature = _buildNotificationSignature(decoded);
       setState(() {
         _items = decoded;
         _isLoading = false;
@@ -71,6 +73,48 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         _isLoading = false;
         _error = e.toString();
       });
+    }
+  }
+
+  String _buildNotificationSignature(List<Map<String, dynamic>> items) {
+    if (items.isEmpty) return 'empty';
+    final first = items.first;
+    final firstId = (first['reply_id'] ??
+            first['notification_id'] ??
+            first['id'] ??
+            '')
+        .toString();
+    final firstCreated = (first['reply_created_at'] ??
+            first['created_at'] ??
+            '')
+        .toString();
+    return '${items.length}|$firstId|$firstCreated';
+  }
+
+  Future<void> _pollForNewNotifications() async {
+    try {
+      final decoded = await BackendApi.unwrapList(
+        BackendApi.getJson(
+          'get_admin_notifications.php',
+          query: const {'limit': '120'},
+          cacheTtl: Duration.zero,
+          retries: 1,
+        ),
+      );
+
+      final nextSignature = _buildNotificationSignature(decoded);
+      if (nextSignature == _lastNotificationSignature || !mounted) {
+        return;
+      }
+
+      _lastNotificationSignature = nextSignature;
+      setState(() {
+        _items = decoded;
+        _selectionMode = false;
+        _selectedIds.clear();
+      });
+    } catch (_) {
+      // Keep polling silent; user can still manually refresh.
     }
   }
 
