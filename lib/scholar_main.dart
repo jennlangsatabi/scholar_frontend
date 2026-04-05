@@ -43,6 +43,7 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
   int? _lastToastAnnouncementId;
   int? _openAnnouncementId;
   Timer? _toastTimer;
+  Timer? _announcementPollTimer;
 
   static const double _drawerBreakpoint = 900;
 
@@ -51,11 +52,16 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
     super.initState();
     _loadUnreadAnnouncements();
     _loadProfileImage();
+    _announcementPollTimer = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) => _loadUnreadAnnouncements(),
+    );
   }
 
   @override
   void dispose() {
     _toastTimer?.cancel();
+    _announcementPollTimer?.cancel();
     super.dispose();
   }
 
@@ -65,7 +71,7 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
         BackendApi.getJson(
           'get_notifications.php',
           query: {'user_id': widget.userId, 'limit': '80'},
-          cacheTtl: const Duration(seconds: 8),
+          cacheTtl: Duration.zero,
           retries: 1,
         ),
       );
