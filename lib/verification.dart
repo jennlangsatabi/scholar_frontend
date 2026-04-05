@@ -31,11 +31,11 @@ class _VerificationScreenState extends State<VerificationScreen>
 
   List<Map<String, dynamic>> pendingDocs = [];
   Map<int, String> _scholarNameByUserId = {};
-  Map<int, Map<String, dynamic>> _scholarByUserId = {};
   bool isLoading = true;
   String errorMessage = "";
   bool _isFetching = false;
   Timer? _pollTimer;
+  String _lastSubmissionSignature = '';
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _VerificationScreenState extends State<VerificationScreen>
     fetchPendingDocuments();
     _pollTimer = Timer.periodic(
       _pollInterval,
-      (_) => fetchPendingDocuments(silent: true),
+      (_) => _pollForNewSubmissions(),
     );
   }
 
@@ -81,6 +81,9 @@ class _VerificationScreenState extends State<VerificationScreen>
         retries: 1,
       );
 
+      final newSignature = _buildSubmissionSignature(list);
+      _lastSubmissionSignature = newSignature;
+
       if (!mounted) return;
       setState(() {
         pendingDocs = list;
@@ -103,7 +106,6 @@ class _VerificationScreenState extends State<VerificationScreen>
   Future<void> _fetchScholarDirectory() async {
     try {
       final map = <int, String>{};
-      final scholarMap = <int, Map<String, dynamic>>{};
       final list = await BackendApi.getList(
         'get_scholars.php',
         cacheTtl: const Duration(minutes: 2),
@@ -119,11 +121,9 @@ class _VerificationScreenState extends State<VerificationScreen>
         if (full.isNotEmpty) {
           map[id] = full;
         }
-        scholarMap[id] = item;
       }
 
       _scholarNameByUserId = map;
-      _scholarByUserId = scholarMap;
     } catch (_) {
       // Keep existing map if lookup fails.
     }
@@ -153,145 +153,29 @@ class _VerificationScreenState extends State<VerificationScreen>
     }
   }
 
-  Future<void> _archiveScholar(String userId) async {
-    if (userId.trim().isEmpty) return;
-    try {
-      final result = await BackendApi.postForm(
-        'archive_scholar.php',
-        body: {'user_id': userId},
-        retries: 1,
-      );
-      final ok = result['success'] == true ||
-          result['status']?.toString().toLowerCase() == 'success';
-      if (!ok) {
-        throw Exception(result.toString());
-      }
-      BackendApi.invalidateCache(pathContains: 'get_scholars.php');
-      BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
-      BackendApi.invalidateCache(pathContains: 'get_pending_verifications.php');
-      _showSnackBar('Scholar archived.', const Color(0xFF8E4B10));
-      await fetchPendingDocuments(silent: true);
-    } catch (e) {
-      _showSnackBar('Archive failed: $e', Colors.red);
-    }
+  String _buildSubmissionSignature(List<Map<String, dynamic>> list) {
+    if (list.isEmpty) return 'empty';
+    final first = list.first;
+    final firstId = (first['id'] ?? first['submission_id'] ?? '').toString();
+    final firstSubmittedAt =
+        (first['submitted_at'] ?? first['upload_date'] ?? '').toString();
+    return '${list.length}|$firstId|$firstSubmittedAt';
   }
 
-  Future<void> _deleteScholar(String userId) async {
-    if (userId.trim().isEmpty) return;
+  Future<void> _pollForNewSubmissions() async {
+    if (_isFetching) return;
     try {
-      final result = await BackendApi.postForm(
-        'delete_scholar.php',
-        body: {'user_id': userId},
+      final list = await BackendApi.getList(
+        'get_pending_verifications.php',
+        cacheTtl: Duration.zero,
         retries: 1,
       );
-      final ok = result['success'] == true ||
-          result['status']?.toString().toLowerCase() == 'success';
-      if (!ok) {
-        throw Exception(result.toString());
+      final nextSignature = _buildSubmissionSignature(list);
+      if (nextSignature != _lastSubmissionSignature) {
+        await fetchPendingDocuments(silent: true);
       }
-      BackendApi.invalidateCache(pathContains: 'get_scholars.php');
-      BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
-      BackendApi.invalidateCache(pathContains: 'get_pending_verifications.php');
-      _showSnackBar('Scholar deleted.', Colors.red);
-      await fetchPendingDocuments(silent: true);
-    } catch (e) {
-      _showSnackBar('Delete failed: $e', Colors.red);
-    }
-  }
-
-  Future<void> _editScholarFromVerification(Map<String, dynamic> doc) async {
-    final userId = int.tryParse((doc['user_id'] ?? '').toString()) ?? 0;
-    if (userId <= 0) {
-      _showSnackBar('Unable to edit: missing scholar user ID.', Colors.red);
-      return;
-    }
-
-    final scholar = _scholarByUserId[userId] ?? <String, dynamic>{};
-    final scholarId = (scholar['scholar_id'] ?? '').toString();
-    if (scholarId.trim().isEmpty) {
-      _showSnackBar('Unable to edit: scholar record not found.', Colors.red);
-      return;
-    }
-
-    final courseController = TextEditingController(
-      text: (scholar['course'] ?? '').toString(),
-    );
-    final yearLevelController = TextEditingController(
-      text: (scholar['year_level'] ?? '').toString(),
-    );
-    final assignedAreaController = TextEditingController(
-      text: (scholar['assigned_area'] ?? '').toString(),
-    );
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Scholar'),
-        content: SizedBox(
-          width: 440,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: courseController,
-                decoration: const InputDecoration(labelText: 'Course'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: yearLevelController,
-                decoration: const InputDecoration(labelText: 'Year Level'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: assignedAreaController,
-                decoration: const InputDecoration(labelText: 'Assigned Area'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      final payload = <String, String>{
-        'scholar_id': scholarId,
-        'course': courseController.text.trim(),
-        'year_level': yearLevelController.text.trim(),
-      };
-      final assigned = assignedAreaController.text.trim();
-      if (assigned.isNotEmpty) {
-        payload['assigned_area'] = assigned;
-      }
-
-      final result = await BackendApi.postForm(
-        'edit_scholar.php',
-        body: payload,
-        retries: 1,
-      );
-      final ok = result['success'] == true ||
-          result['status']?.toString().toLowerCase() == 'success';
-      if (!ok) {
-        throw Exception(result.toString());
-      }
-      BackendApi.invalidateCache(pathContains: 'get_scholars.php');
-      BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
-      await _fetchScholarDirectory();
-      _showSnackBar('Scholar details updated.', Colors.blue);
-      await fetchPendingDocuments(silent: true);
-    } catch (e) {
-      _showSnackBar('Edit failed: $e', Colors.red);
+    } catch (_) {
+      // Keep passive polling silent; manual refresh still works.
     }
   }
 
@@ -648,7 +532,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                   const SizedBox(width: 14, height: 14),
                   Expanded(child: _buildDocMeta(doc, status)),
                   const SizedBox(width: 14, height: 14),
-                  _buildActions(doc),
+                  _buildActions(docId),
                 ];
 
                 if (compact) {
@@ -663,7 +547,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                       const SizedBox(height: 12),
                       _buildDocMeta(doc, status),
                       const SizedBox(height: 12),
-                      _buildActions(doc),
+                      _buildActions(docId),
                     ],
                   );
                 }
@@ -1087,70 +971,26 @@ class _VerificationScreenState extends State<VerificationScreen>
     );
   }
 
-  Widget _buildActions(Map<String, dynamic> doc) {
-    final docId = (doc['id'] ?? '').toString();
-    final userId = (doc['user_id'] ?? '').toString();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildActions(String docId) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FilledButton.icon(
-              onPressed:
-                  docId.isEmpty ? null : () => updateStatus(docId, 'Approved'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
-              ),
-              icon: const Icon(Icons.check_circle_outline, size: 18),
-              label: const Text("Approve"),
-            ),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed:
-                  docId.isEmpty ? null : () => updateStatus(docId, 'Rejected'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFC62828),
-              ),
-              icon: const Icon(Icons.cancel_outlined, size: 18),
-              label: const Text("Reject"),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: userId.isEmpty
-                    ? null
-                    : () => _editScholarFromVerification(doc),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Edit'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed:
-                    userId.isEmpty ? null : () => _archiveScholar(userId),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF8E4B10),
-                ),
-                icon: const Icon(Icons.archive_outlined, size: 18),
-                label: const Text('Archive'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: userId.isEmpty ? null : () => _deleteScholar(userId),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                ),
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Delete'),
-              ),
-            ],
+        FilledButton.icon(
+          onPressed: docId.isEmpty ? null : () => updateStatus(docId, 'Approved'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF2E7D32),
           ),
+          icon: const Icon(Icons.check_circle_outline, size: 18),
+          label: const Text("Approve"),
+        ),
+        const SizedBox(width: 8),
+        FilledButton.icon(
+          onPressed: docId.isEmpty ? null : () => updateStatus(docId, 'Rejected'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFC62828),
+          ),
+          icon: const Icon(Icons.cancel_outlined, size: 18),
+          label: const Text("Reject"),
         ),
       ],
     );
