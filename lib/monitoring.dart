@@ -147,7 +147,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
       final payload = await BackendApi.getJson(
         'get_monitoring_summary.php',
-        cacheTtl: const Duration(seconds: 8),
+        cacheTtl: const Duration(seconds: 1),
         retries: 1,
       );
       final baseData = (payload['scholars'] as List? ?? const [])
