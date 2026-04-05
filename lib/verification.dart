@@ -243,6 +243,7 @@ class _VerificationScreenState extends State<VerificationScreen>
     dt = DateTime.tryParse(raw);
     dt ??= DateTime.tryParse(raw.replaceFirst(' ', 'T'));
     if (dt == null) return raw;
+    final local = dt.toLocal();
 
     const months = [
       'January',
@@ -258,12 +259,12 @@ class _VerificationScreenState extends State<VerificationScreen>
       'November',
       'December'
     ];
-    final month = months[dt.month - 1];
-    final day = dt.day.toString().padLeft(2, '0');
-    final year = dt.year.toString();
-    final hour12 = (dt.hour % 12 == 0 ? 12 : dt.hour % 12).toString();
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final month = months[local.month - 1];
+    final day = local.day.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    final hour12 = (local.hour % 12 == 0 ? 12 : local.hour % 12).toString();
+    final minute = local.minute.toString().padLeft(2, '0');
+    final ampm = local.hour >= 12 ? 'PM' : 'AM';
     return "$month $day, $year $hour12:$minute $ampm";
   }
 
