@@ -583,7 +583,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                   const SizedBox(width: 14, height: 14),
                   Expanded(child: _buildDocMeta(doc, status)),
                   const SizedBox(width: 14, height: 14),
-                  _buildActions(docId),
+                  _buildActions(docId, status),
                 ];
 
                 if (compact) {
@@ -598,7 +598,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                       const SizedBox(height: 12),
                       _buildDocMeta(doc, status),
                       const SizedBox(height: 12),
-                      _buildActions(docId),
+                      _buildActions(docId, status),
                     ],
                   );
                 }
@@ -1014,7 +1014,13 @@ class _VerificationScreenState extends State<VerificationScreen>
     );
   }
 
-  Widget _buildActions(String docId) {
+  Widget _buildActions(String docId, String status) {
+    final normalized = status.trim().toLowerCase();
+    final isPending = normalized.isEmpty || normalized.contains('pending');
+    if (!isPending) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

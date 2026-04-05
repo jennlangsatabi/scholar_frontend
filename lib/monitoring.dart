@@ -15,7 +15,7 @@ class MonitoringScreen extends StatefulWidget {
 
 class _MonitoringScreenState extends State<MonitoringScreen>
     with WidgetsBindingObserver {
-  static const _pollInterval = Duration(seconds: 8);
+  static const _pollInterval = Duration(seconds: 5);
   static const int _maxRowEnrichmentPerRefresh = 20;
   String currentView = 'main';
   String selectedAreaTitle = '';
@@ -147,7 +147,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
       final payload = await BackendApi.getJson(
         'get_monitoring_summary.php',
-        cacheTtl: const Duration(seconds: 1),
+        cacheTtl: Duration.zero,
         retries: 1,
       );
       final baseData = (payload['scholars'] as List? ?? const [])
