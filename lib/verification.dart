@@ -229,7 +229,9 @@ class _VerificationScreenState extends State<VerificationScreen>
       if (lower == 'requirement #0') return 'Report of Grades';
       if (lower == 'requirement #1') return 'Renewal Letter';
       if (lower == 'requirement #2') return 'Enrollment Form';
-      if (lower == 'document') return 'Submitted Document';
+      if (lower == 'document' || lower == 'submitted document') {
+        return 'Renewal Letter';
+      }
       return raw;
     }
 
@@ -317,6 +319,11 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   String _resolveRawFileValue(Map<String, dynamic> doc) {
+    final candidates = _resolveRawFileCandidates(doc);
+    return candidates.isEmpty ? '' : candidates.first;
+  }
+
+  List<String> _resolveRawFileCandidates(Map<String, dynamic> doc) {
     final candidates = [
       doc['image_url'],
       doc['file_path'],
@@ -325,14 +332,15 @@ class _VerificationScreenState extends State<VerificationScreen>
       doc['path'],
     ];
 
+    final values = <String>[];
     for (final raw in candidates) {
       final value = raw?.toString().trim() ?? '';
       if (value.isNotEmpty) {
-        return value;
+        values.add(value);
       }
     }
 
-    return '';
+    return values;
   }
 
   String _resolveImageUrl(Map<String, dynamic> doc) {
@@ -341,8 +349,8 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   List<String> _resolveImageUrls(Map<String, dynamic> doc) {
-    final raw = _resolveRawFileValue(doc);
-    if (raw.isEmpty) return <String>[];
+    final rawCandidates = _resolveRawFileCandidates(doc);
+    if (rawCandidates.isEmpty) return <String>[];
 
     final urls = <String>[];
     void addUrl(String value) {
@@ -353,20 +361,34 @@ class _VerificationScreenState extends State<VerificationScreen>
       }
     }
 
-    addUrl(ApiConfig.normalizeAssetUrl(raw));
+    for (final raw in rawCandidates) {
+      addUrl(ApiConfig.normalizeAssetUrl(raw));
 
-    final normalizedRaw = raw.replaceAll('\\', '/').trim();
-    String? uploadsPath;
-    final uploadsIndex = normalizedRaw.toLowerCase().lastIndexOf('/uploads/');
-    if (uploadsIndex >= 0) {
-      uploadsPath = normalizedRaw.substring(uploadsIndex + 1);
-    } else if (normalizedRaw.toLowerCase().startsWith('uploads/')) {
-      uploadsPath = normalizedRaw;
-    }
+      final normalizedRaw = raw.replaceAll('\\', '/').trim();
+      String? uploadsPath;
 
-    if (uploadsPath != null && uploadsPath.isNotEmpty) {
-      addUrl(ApiConfig.uri('serve_file.php', {'path': uploadsPath}).toString());
-      addUrl(ApiConfig.uri(uploadsPath).toString());
+      final uri = Uri.tryParse(normalizedRaw);
+      if (uri != null && uri.queryParameters.containsKey('path')) {
+        final qp = (uri.queryParameters['path'] ?? '').trim();
+        if (qp.isNotEmpty) {
+          uploadsPath = Uri.decodeComponent(qp);
+        }
+      }
+
+      if (uploadsPath == null || uploadsPath.isEmpty) {
+        final uploadsIndex = normalizedRaw.toLowerCase().lastIndexOf('/uploads/');
+        if (uploadsIndex >= 0) {
+          uploadsPath = normalizedRaw.substring(uploadsIndex + 1);
+        } else if (normalizedRaw.toLowerCase().startsWith('uploads/')) {
+          uploadsPath = normalizedRaw;
+        }
+      }
+
+      if (uploadsPath != null && uploadsPath.isNotEmpty) {
+        final cleanPath = uploadsPath.replaceAll('\\', '/').trim();
+        addUrl(ApiConfig.uri('serve_file.php', {'path': cleanPath}).toString());
+        addUrl(ApiConfig.uri(cleanPath).toString());
+      }
     }
 
     return urls;
