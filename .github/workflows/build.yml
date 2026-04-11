@@ -42,3 +42,15 @@ jobs:
             -Dsonar.projectKey=jennlangsatabi_scholar_frontend
             -Dsonar.projectName=scholar_frontend
             -Dsonar.verbose=true
+
+      - name: Show SonarCloud report URL
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .scannerwork/report-task.txt ]; then
+            echo "---- .scannerwork/report-task.txt ----"
+            cat .scannerwork/report-task.txt
+          else
+            echo "report-task.txt not found (scanner may not have executed)."
+            exit 1
+          fi
