@@ -1,12 +1,23 @@
-version: '3.8'
-
 services:
-  # 1. NGINX (Web Server)
+  # 1. Frontend (Flutter Web -> Nginx)
+  frontend:
+    build:
+      context: C:/Projects/scholar_frontend
+      dockerfile: Dockerfile.web
+      args:
+        API_BASE_URL: http://127.0.0.1:8081
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - nginx
+    networks:
+      - scholar-stack
+
+  # 2. Backend NGINX (PHP API gateway)
   nginx:
     image: nginx:alpine
-    container_name: scholar-nginx
     ports:
-      - "80:80"
+      - "127.0.0.1:8081:80"
     volumes:
       - C:/xampp/htdocs/scholar_php:/var/www/html
       - C:/xampp/htdocs/scholar_php/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -15,34 +26,39 @@ services:
     networks:
       - scholar-stack
 
-  # 2. PHP-FPM (App Engine)
+  # 3. PHP-FPM (App Engine)
   php:
     build: C:/xampp/htdocs/scholar_php
-    container_name: php-backend
+    volumes:
+      - C:/xampp/htdocs/scholar_php:/var/www/html
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: scholar_sys
+      DB_USER: root
+      DB_PASSWORD: Erich.guden05
     networks:
       - scholar-stack
     depends_on:
       - mysql
       - redis
 
-  # 3. MYSQL (Database)
+  # 4. MYSQL (Database)
   mysql:
     image: mysql:8.0
-    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: Erich.guden05
       MYSQL_DATABASE: scholar_sys
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - scholar-stack
 
-  # 4. REDIS (Cache)
+  # 5. REDIS (Cache)
   redis:
     image: redis:alpine
-    container_name: scholar-redis
     networks:
       - scholar-stack
 
