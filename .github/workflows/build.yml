@@ -41,4 +41,4 @@ jobs:
             -Dsonar.organization=jennlangsatabi
             -Dsonar.projectKey=jennlangsatabi_scholar_frontend
             -Dsonar.projectName=scholar_frontend
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.verbose=true
