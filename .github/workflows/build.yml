@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   sonarcloud:
@@ -17,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: https://sonarcloud.io
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,3 +41,4 @@ jobs:
             -Dsonar.organization=jennlangsatabi
             -Dsonar.projectKey=jennlangsatabi_scholar_frontend
             -Dsonar.projectName=scholar_frontend
+            -Dsonar.qualitygate.wait=true
