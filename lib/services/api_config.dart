@@ -4,14 +4,27 @@ import '../config/app_env.dart';
 
 class ApiConfig {
   static String get baseUrl {
-    if (AppEnv.hasApiBaseUrl) {
-      return AppEnv.apiBaseUrl;
-    }
-
     if (kIsWeb) {
+      final webHost = Uri.base.host.toLowerCase();
+      final isLocalWebDev = webHost == 'localhost' || webHost == '127.0.0.1';
+
+      // For `flutter run -d chrome`, force local PHP to avoid CORS pain with
+      // remote backends and random localhost dev ports.
+      if (isLocalWebDev) {
+        return 'http://127.0.0.1/scholar_php';
+      }
+
+      if (AppEnv.hasApiBaseUrl) {
+        return AppEnv.apiBaseUrl;
+      }
+
       // On Windows, `localhost` often resolves to IPv6 (`::1`), while XAMPP/Apache
       // commonly listens only on IPv4. Using 127.0.0.1 avoids fetch failures.
       return 'http://127.0.0.1/scholar_php';
+    }
+
+    if (AppEnv.hasApiBaseUrl) {
+      return AppEnv.apiBaseUrl;
     }
 
     switch (defaultTargetPlatform) {

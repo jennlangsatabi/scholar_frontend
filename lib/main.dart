@@ -73,7 +73,55 @@ class _MainPortalPageState extends State<MainPortalPage> {
   @override
   void initState() {
     super.initState();
+    _tryHandleOAuthCallback();
     BackendApi.warmUp();
+  }
+
+  void _tryHandleOAuthCallback() {
+    final qp = Uri.base.queryParameters;
+    if (qp.isEmpty) {
+      return;
+    }
+
+    final status = (qp['status'] ?? '').trim().toLowerCase();
+    if (status != 'success') {
+      return;
+    }
+
+    final role = (qp['role'] ?? '').trim().toLowerCase();
+    final userId = (qp['user_id'] ?? qp['id'] ?? '').trim();
+    final displayName =
+        (qp['name'] ?? qp['email'] ?? '').trim().isNotEmpty
+            ? (qp['name'] ?? qp['email'] ?? '').trim()
+            : 'Scholar';
+
+    if (userId.isEmpty) {
+      return;
+    }
+
+    if (role == 'admin') {
+      setState(() {
+        selectedRole = 'Admin';
+        currentUserId = userId;
+        currentAdminName = displayName;
+        currentState = PortalState.adminDashboard;
+      });
+      return;
+    }
+
+    if (role == 'scholar') {
+      final category = (qp['scholarship_category'] ?? qp['scholarship_type'] ?? '')
+          .trim();
+      setState(() {
+        selectedRole = 'Scholar';
+        currentUserId = userId;
+        currentUsername = displayName;
+        selectedScholarType =
+            category.isNotEmpty ? category : 'Student Assistant Scholar';
+        currentScholarCategory = category;
+        currentState = PortalState.scholarDashboard;
+      });
+    }
   }
 
   @override
