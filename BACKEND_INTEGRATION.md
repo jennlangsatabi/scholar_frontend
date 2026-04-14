@@ -77,7 +77,10 @@ The active codebase is wired to a custom PHP/MySQL backend.
 
 ### Existing / reused
 
-- `POST /scholar_php/auth_login.php`
+- Local XAMPP path: `POST /scholar_php/auth_login.php`
+- Local XAMPP path: `GET /scholar_php/google_oauth_start.php` or equivalent OAuth start endpoint configured through `GOOGLE_OAUTH_URL`
+- Render backend service root path: `POST /auth_login.php`
+- Render backend service root path: `GET /google_oauth_start.php`
 - `GET /scholar_php/get_admin_stats.php`
 - `GET /scholar_php/get_scholars.php`
 - `POST /scholar_php/add_scholar.php`
@@ -232,6 +235,10 @@ final request = http.MultipartRequest(
 4. Flutter routes:
    - `role == admin` -> admin shell
    - `role == scholar` -> scholar shell using backend scholar type
+5. Google OAuth button:
+   - Flutter opens the URL from `GOOGLE_OAUTH_URL`.
+   - Append `role=admin` or `role=scholar` so the backend can branch the OAuth callback if needed.
+   - The current app launches the auth URL externally; the backend still needs to complete the OAuth callback/session exchange.
 
 ## Files Changed
 

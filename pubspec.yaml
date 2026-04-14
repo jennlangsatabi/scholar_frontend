@@ -10,6 +10,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.12.0
   http: ^1.2.0
   file_picker: ^8.1.7
+  flutter_dotenv: ^5.1.0
+  url_launcher: ^6.3.0
   flutter_test:
     sdk: flutter
 
@@ -22,3 +24,4 @@ flutter:
     - assets/jmcbg.jpg
     - assets/jmclogo.png
     - assets/jenn.png
+    - .env

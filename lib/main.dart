@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Ensure these imports match your actual file names
 import 'role_selection.dart';
@@ -10,7 +11,15 @@ import 'scholar_main.dart';
 import 'evaluation_form.dart';
 import 'services/backend_api.dart';
 
-void main() => runApp(const JMCFIScholarshipApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // Fall back to dart-define values when .env is not bundled.
+  }
+  runApp(const JMCFIScholarshipApp());
+}
 
 class JMCFIScholarshipApp extends StatelessWidget {
   const JMCFIScholarshipApp({super.key});

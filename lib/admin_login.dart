@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
 import 'services/backend_api.dart';
 import 'services/api_config.dart';
-import 'dart:async';
+import 'services/google_oauth_launcher.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   final void Function(Map<String, dynamic>) onLoginSuccess;
@@ -24,6 +26,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _showPassword = false;
 
   @override
@@ -81,7 +84,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         _showError(data['message'] ?? "Invalid Email or Password");
       }
     } catch (e) {
-      if (e is TimeoutException || e is ClientException || e is FormatException) {
+      if (e is TimeoutException ||
+          e is ClientException ||
+          e is FormatException) {
         // First request after Render cold-start can fail; retry once more while
         // keeping the user on the same click.
         try {
@@ -124,6 +129,25 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       debugPrint("Admin login error: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    if (_isLoading || _isGoogleLoading) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      final launched = await GoogleOAuthLauncher.launch(portalRole: 'admin');
+      if (!launched) {
+        _showError(
+          'Google login is not configured yet. Set GOOGLE_OAUTH_URL to your OAuth start endpoint.',
+        );
+      }
+    } catch (e) {
+      _showError('Unable to start Google login.');
+      debugPrint("Admin Google login error: $e");
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -170,6 +194,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           const CircularProgressIndicator(color: Colors.white)
         else
           _loginBtn('LOGIN', _handleLogin),
+
+        const SizedBox(height: 14),
+        if (_isGoogleLoading)
+          const CircularProgressIndicator(color: Colors.white)
+        else
+          _googleLoginBtn('Continue with Google', _handleGoogleLogin),
 
         // 4. BACK BUTTON
         const SizedBox(height: 10),
@@ -249,6 +279,57 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _googleLoginBtn(String label, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF202124),
+          elevation: 5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF4285F4), width: 2),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'G',
+                style: TextStyle(
+                  color: Color(0xFF4285F4),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
       ),
     );

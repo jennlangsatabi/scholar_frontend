@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
 import 'services/backend_api.dart';
 import 'services/api_config.dart';
-import 'dart:async';
+import 'services/google_oauth_launcher.dart';
 
 class ScholarLoginScreen extends StatefulWidget {
   final void Function(Map<String, dynamic>) onLoginSuccess;
@@ -24,6 +26,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _showPassword = false;
 
   String localScholarType = 'Student Assistant Scholar';
@@ -63,56 +66,57 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         timeout: const Duration(seconds: 45),
         retries: 3,
       );
-        if (data['status'] == 'success') {
-          final String dbRole = data['role'].toString().toLowerCase();
-          final String displayName =
-              (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
-                  .toString();
-          final String resolvedUserId =
-              (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
-                  .toString();
+      if (data['status'] == 'success') {
+        final String dbRole = data['role'].toString().toLowerCase();
+        final String displayName =
+            (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
+                .toString();
+        final String resolvedUserId =
+            (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
+                .toString();
 
-          if (resolvedUserId.isEmpty) {
-            _showError("Login succeeded but no user ID was returned by PHP.");
-            return;
-          }
-
-          if (dbRole != 'scholar') {
-            _showError("Unauthorized: this portal is for scholars only.");
-            return;
-          }
-
-          final backendCategory = (data['scholarship_category'] ??
-                  data['scholarship_type'] ??
-                  '')
-              .toString()
-              .trim();
-          if (backendCategory.isEmpty) {
-            _showError(
-                "Your account has no scholar category assigned. Please contact admin.");
-            return;
-          }
-          if (!_matchesSelectedRole(backendCategory, localScholarType)) {
-            _showError(
-                "This account is registered as $backendCategory. Select that role to continue.");
-            return;
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Welcome Scholar, $displayName!")),
-          );
-          widget.onLoginSuccess({
-            'id': resolvedUserId,
-            'name': displayName,
-            'type': backendCategory,
-            'role': dbRole,
-            'email': data['email']?.toString() ?? '',
-          });
-        } else {
-          _showError(data['message'] ?? "Login Failed");
+        if (resolvedUserId.isEmpty) {
+          _showError("Login succeeded but no user ID was returned by PHP.");
+          return;
         }
+
+        if (dbRole != 'scholar') {
+          _showError("Unauthorized: this portal is for scholars only.");
+          return;
+        }
+
+        final backendCategory =
+            (data['scholarship_category'] ?? data['scholarship_type'] ?? '')
+                .toString()
+                .trim();
+        if (backendCategory.isEmpty) {
+          _showError(
+              "Your account has no scholar category assigned. Please contact admin.");
+          return;
+        }
+        if (!_matchesSelectedRole(backendCategory, localScholarType)) {
+          _showError(
+              "This account is registered as $backendCategory. Select that role to continue.");
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Welcome Scholar, $displayName!")),
+        );
+        widget.onLoginSuccess({
+          'id': resolvedUserId,
+          'name': displayName,
+          'type': backendCategory,
+          'role': dbRole,
+          'email': data['email']?.toString() ?? '',
+        });
+      } else {
+        _showError(data['message'] ?? "Login Failed");
+      }
     } catch (e) {
-      if (e is TimeoutException || e is ClientException || e is FormatException) {
+      if (e is TimeoutException ||
+          e is ClientException ||
+          e is FormatException) {
         try {
           await Future.delayed(const Duration(seconds: 2));
           await BackendApi.warmUp();
@@ -129,11 +133,9 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
           );
           if (data['status'] == 'success') {
             final String dbRole = data['role'].toString().toLowerCase();
-            final String displayName = (data['username'] ??
-                    data['name'] ??
-                    data['email'] ??
-                    'Scholar')
-                .toString();
+            final String displayName =
+                (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
+                    .toString();
             final String resolvedUserId =
                 (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
                     .toString();
@@ -172,6 +174,25 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    if (_isLoading || _isGoogleLoading) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      final launched = await GoogleOAuthLauncher.launch(portalRole: 'scholar');
+      if (!launched) {
+        _showError(
+          'Google login is not configured yet. Set GOOGLE_OAUTH_URL to your OAuth start endpoint.',
+        );
+      }
+    } catch (e) {
+      _showError('Unable to start Google login.');
+      debugPrint("Scholar Google login error: $e");
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
   String _buildConnectionErrorMessage(Object error) {
     if (error is ClientException) {
       return 'Connection Error: Chrome blocked the request to ${ApiConfig.baseUrl}. '
@@ -183,7 +204,8 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   bool _matchesSelectedRole(String backendCategory, String selected) {
     String canon(String raw) {
       final t = raw.toLowerCase();
-      if (t.contains('student') && t.contains('assistant')) return 'student_assistant';
+      if (t.contains('student') && t.contains('assistant'))
+        return 'student_assistant';
       if (t.contains('varsity')) return 'varsity';
       if (t.contains('academic')) return 'academic';
       if (t.contains('gift')) return 'gift';
@@ -255,6 +277,12 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
           const CircularProgressIndicator(color: Colors.white)
         else
           _loginBtn('LOGIN', _handleLogin),
+
+        const SizedBox(height: 14),
+        if (_isGoogleLoading)
+          const CircularProgressIndicator(color: Colors.white)
+        else
+          _googleLoginBtn('Continue with Google', _handleGoogleLogin),
 
         // 5. BACK BUTTON
         const SizedBox(height: 10),
@@ -334,6 +362,57 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _googleLoginBtn(String label, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF202124),
+          elevation: 5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF4285F4), width: 2),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'G',
+                style: TextStyle(
+                  color: Color(0xFF4285F4),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
       ),
     );
