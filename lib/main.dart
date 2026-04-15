@@ -9,6 +9,7 @@ import 'scholar_login.dart';
 import 'admin_main.dart';
 import 'scholar_main.dart';
 import 'evaluation_form.dart';
+import 'create_account_modal.dart';
 import 'services/backend_api.dart';
 
 Future<void> main() async {
@@ -69,12 +70,19 @@ class _MainPortalPageState extends State<MainPortalPage> {
   String currentAdminName = 'Administrator';
   String selectedScholarType = 'Student Assistant Scholar';
   String currentScholarCategory = '';
+  Map<String, String>? _pendingGoogleAccount;
 
   @override
   void initState() {
     super.initState();
     _tryHandleOAuthCallback();
     BackendApi.warmUp();
+    if (_pendingGoogleAccount != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _pendingGoogleAccount == null) return;
+        _showCreateAccountModal(_pendingGoogleAccount!);
+      });
+    }
   }
 
   void _tryHandleOAuthCallback() {
@@ -84,7 +92,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
     }
 
     final status = (qp['status'] ?? '').trim().toLowerCase();
-    if (status != 'success') {
+    if (status != 'success' && status != 'pending_account') {
       return;
     }
 
@@ -94,8 +102,44 @@ class _MainPortalPageState extends State<MainPortalPage> {
         (qp['name'] ?? qp['email'] ?? '').trim().isNotEmpty
             ? (qp['name'] ?? qp['email'] ?? '').trim()
             : 'Scholar';
+    final email = (qp['email'] ?? '').trim();
+
+    if (role == 'scholar' && status == 'pending_account') {
+      currentState = PortalState.login;
+      selectedRole = 'Scholar';
+      currentUsername = displayName;
+      selectedScholarType = (qp['scholarship_category'] ??
+              qp['scholarship_type'] ??
+              selectedScholarType)
+          .trim();
+      currentScholarCategory = selectedScholarType;
+      _pendingGoogleAccount = <String, String>{
+        'name': displayName,
+        'email': email.isNotEmpty ? email : displayName,
+        'role': role,
+        'scholarship_category': selectedScholarType,
+        if (userId.isNotEmpty) 'user_id': userId,
+      };
+      return;
+    }
 
     if (userId.isEmpty) {
+      if (role == 'scholar' && status == 'success') {
+        currentState = PortalState.login;
+        selectedRole = 'Scholar';
+        currentUsername = displayName;
+        selectedScholarType = (qp['scholarship_category'] ??
+                qp['scholarship_type'] ??
+                selectedScholarType)
+            .trim();
+        currentScholarCategory = selectedScholarType;
+        _pendingGoogleAccount = <String, String>{
+          'name': displayName,
+          'email': email.isNotEmpty ? email : displayName,
+          'role': role,
+          'scholarship_category': selectedScholarType,
+        };
+      }
       return;
     }
 
@@ -122,6 +166,32 @@ class _MainPortalPageState extends State<MainPortalPage> {
         currentState = PortalState.scholarDashboard;
       });
     }
+  }
+
+  Future<void> _showCreateAccountModal(Map<String, String> details) async {
+    _pendingGoogleAccount = null;
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CreateAccountModal(
+        initialName: details['name'] ?? '',
+        initialEmail: details['email'] ?? '',
+        initialScholarshipType:
+            details['scholarship_category'] ?? selectedScholarType,
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Create account details captured for ${result['email'] ?? 'your Google account'}.',
+        ),
+      ),
+    );
   }
 
   @override
