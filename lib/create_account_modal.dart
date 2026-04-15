@@ -128,7 +128,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   ),
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedScholarshipType,
+                    value: _selectedScholarshipType,
                     decoration: _inputDecoration('Scholarship Type'),
                     items: _scholarshipTypes
                         .map(
