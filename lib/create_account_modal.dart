@@ -82,25 +82,23 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
       );
 
       final Map<String, String> body;
-      final String endpoint;
+      final String endpoint = 'request_account.php';
 
       if (_isScholar) {
-        endpoint = 'add_scholar.php';
         body = {
-          'user_id': '0',
+          'username': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'role': _role,
+          'scholarship_category': backendScholarshipCategory,
+          'scholarship_type': _selectedScholarshipType,
           'first_name': nameParts.firstName,
           'middle_name': nameParts.middleName,
           'last_name': nameParts.lastName,
           'course': 'Not specified',
           'year_level': '1',
-          'scholarship_category': backendScholarshipCategory,
-          'scholarship_status': 'pending',
-          'username': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
         };
       } else {
-        endpoint = 'insert_user.php';
         body = {
           'username': _nameController.text.trim(),
           'email': _emailController.text.trim(),
@@ -128,7 +126,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'role': _role,
-        'user_id': userId,
+        'request_id': userId,
         if (_isScholar) ...{
           'scholarship_category': backendScholarshipCategory,
           'scholarship_type': _selectedScholarshipType,
@@ -201,8 +199,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Create Account',
+                  Text(
+                    _isScholar ? 'Create Scholar Account' : 'Create Admin Account',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
@@ -212,8 +210,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   const SizedBox(height: 8),
                   Text(
                     _isScholar
-                        ? 'Finish setting up your scholar account with the Google details we received.'
-                        : 'Finish setting up your admin account with the Google details we received.',
+                        ? 'Submit a scholar account request using the Google details we received.'
+                        : 'Submit an admin account request using the Google details we received.',
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontSize: 14,
@@ -341,7 +339,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                                   ),
                                 )
                               : const Text(
-                                  'Create Account',
+                                  'Submit Request',
                                   style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
                         ),

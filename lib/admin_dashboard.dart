@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import 'account_requests_modal.dart';
 import 'services/backend_api.dart';
 
 class AdminDashboardView extends StatefulWidget {
@@ -25,6 +26,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
   List<Map<String, dynamic>> recentSubmissions = [];
   Map<int, String> _scholarNameByUserId = {};
   DateTime? _scholarDirectoryFetchedAt;
+  int _pendingAccountRequests = 0;
   bool isLoading = true;
   bool isRefreshing = false;
   String? errorMessage;
@@ -36,6 +38,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _fetchAdminStats();
+    _loadPendingAccountRequests();
     _pollTimer = Timer.periodic(_pollInterval, (_) => _fetchAdminStats(silent: true));
   }
 
@@ -101,6 +104,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
         isRefreshing = false;
         lastUpdatedAt = DateTime.now();
       });
+
+      _loadPendingAccountRequests();
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -138,6 +143,24 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
       );
     } catch (_) {
       return [];
+    }
+  }
+
+  Future<void> _loadPendingAccountRequests() async {
+    try {
+      final payload = await BackendApi.getJson(
+        'get_account_requests.php',
+        query: const {'status': 'pending', 'limit': '200'},
+        cacheTtl: Duration.zero,
+        retries: 1,
+      );
+      final items = payload['data'];
+      final count = items is List ? items.length : 0;
+      if (!mounted) return;
+      setState(() => _pendingAccountRequests = count);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _pendingAccountRequests = 0);
     }
   }
 
@@ -288,12 +311,61 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
                 ),
               ),
               const SizedBox(width: 12),
+              _accountRequestsButton(),
+              const SizedBox(width: 12),
               refreshButton,
             ],
           );
         },
       ),
     );
+  }
+
+  Widget _accountRequestsButton() {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        FilledButton.icon(
+          onPressed: _openAccountRequestsModal,
+          icon: const Icon(Icons.notifications_active_outlined),
+          label: const Text("Account Requests"),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF3B125A),
+            foregroundColor: Colors.white,
+          ),
+        ),
+        if (_pendingAccountRequests > 0)
+          Positioned(
+            right: -6,
+            top: -6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Text(
+                _pendingAccountRequests.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _openAccountRequestsModal() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AccountRequestsModal(),
+    );
+    await _loadPendingAccountRequests();
   }
 
   Widget _buildStatsGrid() {
