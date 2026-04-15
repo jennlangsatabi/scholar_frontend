@@ -67,6 +67,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         retries: 3,
       );
       if (data['status'] == 'success') {
+        if (!mounted) return;
         final String dbRole = data['role'].toString().toLowerCase();
         final String displayName =
             (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
@@ -89,12 +90,10 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
             (data['scholarship_category'] ?? data['scholarship_type'] ?? '')
                 .toString()
                 .trim();
-        if (backendCategory.isEmpty) {
-          _showError(
-              "Your account has no scholar category assigned. Please contact admin.");
-          return;
-        }
-        if (!_matchesSelectedRole(backendCategory, localScholarType)) {
+        final resolvedCategory =
+            backendCategory.isNotEmpty ? backendCategory : localScholarType;
+        if (backendCategory.isNotEmpty &&
+            !_matchesSelectedRole(backendCategory, localScholarType)) {
           _showError(
               "This account is registered as $backendCategory. Select that role to continue.");
           return;
@@ -106,7 +105,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         widget.onLoginSuccess({
           'id': resolvedUserId,
           'name': displayName,
-          'type': backendCategory,
+          'type': resolvedCategory,
           'role': dbRole,
           'email': data['email']?.toString() ?? '',
         });
@@ -146,7 +145,10 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
                       '')
                   .toString()
                   .trim();
-              if (backendCategory.isNotEmpty &&
+              final resolvedCategory = backendCategory.isNotEmpty
+                  ? backendCategory
+                  : localScholarType;
+              if (backendCategory.isEmpty ||
                   _matchesSelectedRole(backendCategory, localScholarType)) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -155,7 +157,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
                 widget.onLoginSuccess({
                   'id': resolvedUserId,
                   'name': displayName,
-                  'type': backendCategory,
+                  'type': resolvedCategory,
                   'role': dbRole,
                   'email': data['email']?.toString() ?? '',
                 });
@@ -204,8 +206,9 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   bool _matchesSelectedRole(String backendCategory, String selected) {
     String canon(String raw) {
       final t = raw.toLowerCase();
-      if (t.contains('student') && t.contains('assistant'))
+      if (t.contains('student') && t.contains('assistant')) {
         return 'student_assistant';
+      }
       if (t.contains('varsity')) return 'varsity';
       if (t.contains('academic')) return 'academic';
       if (t.contains('gift')) return 'gift';
