@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import 'services/backend_api.dart';
 import 'scholarship_types.dart';
@@ -42,15 +43,21 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   bool _showArchived = false;
   String _selectedFilterCategory = 'All';
   String _selectedFormCategory = 'Student Assistant';
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     fetchScholars();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => fetchScholars(),
+    );
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _searchController.dispose();
     _firstNameController.dispose();
     _middleNameController.dispose();
@@ -65,6 +72,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
   }
 
   Future<void> fetchScholars() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       _scholars = await BackendApi.unwrapList(
