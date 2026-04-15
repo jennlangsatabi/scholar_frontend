@@ -200,15 +200,34 @@ class _MainPortalPageState extends State<MainPortalPage> {
     final displayName =
         (result['name'] ?? details['name'] ?? 'User').trim();
     final email = (result['email'] ?? details['email'] ?? '').trim();
+    final userId = (result['user_id'] ?? '').trim();
     final scholarshipCategory =
         (result['scholarship_category'] ?? details['scholarship_category'] ?? '')
             .trim();
 
+    if (role == 'admin') {
+      setState(() {
+        currentState = PortalState.login;
+        selectedRole = 'Admin';
+        currentUsername = displayName;
+        currentAdminName = displayName;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Admin request submitted for ${email.isNotEmpty ? email : displayName}. Wait for approval before logging in.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
-      currentState = PortalState.login;
-      selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
+      currentUserId = userId;
+      currentState = PortalState.scholarDashboard;
+      selectedRole = 'Scholar';
       currentUsername = displayName;
-      currentAdminName = displayName;
       if (scholarshipCategory.isNotEmpty) {
         selectedScholarType = _displayScholarshipType(scholarshipCategory);
         currentScholarCategory = scholarshipCategory;
@@ -218,7 +237,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Request submitted for ${email.isNotEmpty ? email : displayName}. Wait for admin approval before logging in.',
+          'Scholar account created successfully for ${email.isNotEmpty ? email : displayName}.',
         ),
       ),
     );

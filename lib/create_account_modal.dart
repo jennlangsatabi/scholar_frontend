@@ -82,21 +82,20 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
       );
 
       final Map<String, String> body;
-      final String endpoint = 'request_account.php';
-
       if (_isScholar) {
         body = {
+          'user_id': '0',
           'username': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
-          'role': _role,
-          'scholarship_category': backendScholarshipCategory,
-          'scholarship_type': _selectedScholarshipType,
           'first_name': nameParts.firstName,
           'middle_name': nameParts.middleName,
           'last_name': nameParts.lastName,
           'course': 'Not specified',
           'year_level': '1',
+          'scholarship_category': backendScholarshipCategory,
+          'scholarship_status': 'pending',
+          'scholarship_type': _selectedScholarshipType,
         };
       } else {
         body = {
@@ -107,6 +106,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         };
       }
 
+      final String endpoint = _isScholar ? 'add_scholar.php' : 'request_account.php';
+
       final response = await BackendApi.postForm(
         endpoint,
         body: body,
@@ -114,11 +115,11 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         retries: 2,
       );
 
-      final userId = (response['user_id'] ?? response['id'] ?? '')
+      final createdId = (response['user_id'] ?? response['id'] ?? response['request_id'] ?? '')
           .toString()
           .trim();
-      if (userId.isEmpty) {
-        throw const FormatException('The backend did not return a user id.');
+      if (createdId.isEmpty) {
+        throw const FormatException('The backend did not return an id.');
       }
 
       if (!mounted) return;
@@ -126,7 +127,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'role': _role,
-        'request_id': userId,
+        if (_isScholar) 'user_id': createdId else 'request_id': createdId,
         if (_isScholar) ...{
           'scholarship_category': backendScholarshipCategory,
           'scholarship_type': _selectedScholarshipType,
@@ -210,7 +211,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   const SizedBox(height: 8),
                   Text(
                     _isScholar
-                        ? 'Submit a scholar account request using the Google details we received.'
+                        ? 'Create a scholar account using the Google details we received.'
                         : 'Submit an admin account request using the Google details we received.',
                     style: TextStyle(
                       color: Colors.grey.shade700,
