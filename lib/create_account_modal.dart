@@ -51,9 +51,10 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
     _emailController = TextEditingController(text: widget.initialEmail);
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
-    _selectedScholarshipType = _scholarshipTypes.contains(widget.initialScholarshipType)
-        ? widget.initialScholarshipType
-        : _scholarshipTypes.first;
+    _selectedScholarshipType =
+        _scholarshipTypes.contains(widget.initialScholarshipType)
+            ? widget.initialScholarshipType
+            : _scholarshipTypes.first;
   }
 
   @override
@@ -106,7 +107,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         };
       }
 
-      final String endpoint = _isScholar ? 'add_scholar.php' : 'request_account.php';
+      final String endpoint =
+          _isScholar ? 'add_scholar.php' : 'request_account.php';
 
       final response = await BackendApi.postForm(
         endpoint,
@@ -115,24 +117,58 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         retries: 2,
       );
 
-      final createdId = (response['user_id'] ?? response['id'] ?? response['request_id'] ?? '')
-          .toString()
-          .trim();
-      if (createdId.isEmpty) {
-        throw const FormatException('The backend did not return an id.');
-      }
+      if (_isScholar) {
+        final loginResult = await BackendApi.postForm(
+          'auth_login.php',
+          body: {
+            'email': _emailController.text.trim(),
+            'password': _passwordController.text,
+            'scholarship_category': backendScholarshipCategory,
+            'scholarship_type': _selectedScholarshipType,
+          },
+          timeout: const Duration(seconds: 45),
+          retries: 2,
+        );
 
-      if (!mounted) return;
-      Navigator.of(context).pop(<String, String>{
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'role': _role,
-        if (_isScholar) 'user_id': createdId else 'request_id': createdId,
-        if (_isScholar) ...{
+        final createdId = (loginResult['user_id'] ??
+                loginResult['id'] ??
+                loginResult['scholar_id'] ??
+                '')
+            .toString()
+            .trim();
+        if (createdId.isEmpty) {
+          throw const FormatException(
+            'The backend created the scholar but did not return a usable user id.',
+          );
+        }
+
+        if (!mounted) return;
+        Navigator.of(context).pop(<String, String>{
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'role': _role,
+          'user_id': createdId,
           'scholarship_category': backendScholarshipCategory,
           'scholarship_type': _selectedScholarshipType,
-        },
-      });
+        });
+      } else {
+        final createdId = (response['request_id'] ?? response['user_id'] ?? '')
+            .toString()
+            .trim();
+        if (createdId.isEmpty) {
+          throw const FormatException(
+            'The backend did not return a request id.',
+          );
+        }
+
+        if (!mounted) return;
+        Navigator.of(context).pop(<String, String>{
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'role': _role,
+          'request_id': createdId,
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -145,7 +181,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
     }
   }
 
-  ({String firstName, String middleName, String lastName}) _splitName(String raw) {
+  ({String firstName, String middleName, String lastName}) _splitName(
+      String raw) {
     final cleaned = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (cleaned.isEmpty) {
       return (firstName: 'Google', middleName: '', lastName: 'User');
@@ -201,7 +238,9 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _isScholar ? 'Create Scholar Account' : 'Create Admin Account',
+                    _isScholar
+                        ? 'Create Scholar Account'
+                        : 'Create Admin Account',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
@@ -314,7 +353,9 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     children: [
                       Expanded(
                         child: TextButton(
-                          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => Navigator.of(context).pop(),
                           child: const Text('Cancel'),
                         ),
                       ),
@@ -340,7 +381,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                                   ),
                                 )
                               : const Text(
-                                  'Submit Request',
+                                  'Create Scholar Access',
                                   style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
                         ),
