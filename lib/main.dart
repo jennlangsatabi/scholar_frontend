@@ -104,30 +104,37 @@ class _MainPortalPageState extends State<MainPortalPage> {
             : 'Scholar';
     final email = (qp['email'] ?? '').trim();
 
-    if (role == 'scholar' && status == 'pending_account') {
+    if (status == 'pending_account') {
       currentState = PortalState.login;
-      selectedRole = 'Scholar';
+      selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
       currentUsername = displayName;
-      selectedScholarType = (qp['scholarship_category'] ??
-              qp['scholarship_type'] ??
-              selectedScholarType)
-          .trim();
-      currentScholarCategory = selectedScholarType;
+      if (role == 'admin') {
+        currentAdminName = displayName;
+      } else {
+        selectedScholarType = (qp['scholarship_category'] ??
+                qp['scholarship_type'] ??
+                selectedScholarType)
+            .trim();
+        currentScholarCategory = selectedScholarType;
+      }
       _pendingGoogleAccount = <String, String>{
         'name': displayName,
         'email': email.isNotEmpty ? email : displayName,
         'role': role,
-        'scholarship_category': selectedScholarType,
+        if (role == 'scholar') 'scholarship_category': selectedScholarType,
         if (userId.isNotEmpty) 'user_id': userId,
       };
       return;
     }
 
     if (userId.isEmpty) {
-      if (role == 'scholar' && status == 'success') {
+      if (status == 'success') {
         currentState = PortalState.login;
-        selectedRole = 'Scholar';
+        selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
         currentUsername = displayName;
+        if (role == 'admin') {
+          currentAdminName = displayName;
+        }
         selectedScholarType = (qp['scholarship_category'] ??
                 qp['scholarship_type'] ??
                 selectedScholarType)
@@ -137,7 +144,8 @@ class _MainPortalPageState extends State<MainPortalPage> {
           'name': displayName,
           'email': email.isNotEmpty ? email : displayName,
           'role': role,
-          'scholarship_category': selectedScholarType,
+          if (role == 'scholar')
+            'scholarship_category': selectedScholarType,
         };
       }
       return;
@@ -178,6 +186,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
         initialEmail: details['email'] ?? '',
         initialScholarshipType:
             details['scholarship_category'] ?? selectedScholarType,
+        initialRole: details['role'] ?? 'scholar',
       ),
     );
 
@@ -185,10 +194,35 @@ class _MainPortalPageState extends State<MainPortalPage> {
       return;
     }
 
+    final role = (result['role'] ?? details['role'] ?? 'scholar')
+        .trim()
+        .toLowerCase();
+    final displayName =
+        (result['name'] ?? details['name'] ?? 'User').trim();
+    final email = (result['email'] ?? details['email'] ?? '').trim();
+    final userId = (result['user_id'] ?? '').trim();
+    final scholarshipCategory =
+        (result['scholarship_category'] ?? details['scholarship_category'] ?? '')
+            .trim();
+
+    setState(() {
+      currentUserId = userId;
+      currentUsername = displayName;
+      currentAdminName = displayName;
+      selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
+      if (scholarshipCategory.isNotEmpty) {
+        selectedScholarType = scholarshipCategory;
+        currentScholarCategory = scholarshipCategory;
+      }
+      currentState = role == 'admin'
+          ? PortalState.adminDashboard
+          : PortalState.scholarDashboard;
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Create account details captured for ${result['email'] ?? 'your Google account'}.',
+          'Account created successfully for ${email.isNotEmpty ? email : displayName}.',
         ),
       ),
     );

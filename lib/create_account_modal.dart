@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import 'services/backend_api.dart';
+
 class CreateAccountModal extends StatefulWidget {
   final String initialName;
   final String initialEmail;
   final String initialScholarshipType;
+  final String initialRole;
 
   const CreateAccountModal({
     super.key,
     required this.initialName,
     required this.initialEmail,
     required this.initialScholarshipType,
+    this.initialRole = 'scholar',
   });
 
   @override
@@ -22,6 +26,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
+  bool _isSubmitting = false;
+  String? _errorMessage;
 
   final List<String> _scholarshipTypes = const [
     'Student Assistant Scholar',
@@ -31,10 +37,16 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
   ];
 
   late String _selectedScholarshipType;
+  late final String _role;
+
+  bool get _isScholar => _role == 'scholar';
 
   @override
   void initState() {
     super.initState();
+    _role = widget.initialRole.trim().toLowerCase() == 'admin'
+        ? 'admin'
+        : 'scholar';
     _nameController = TextEditingController(text: widget.initialName);
     _emailController = TextEditingController(text: widget.initialEmail);
     _passwordController = TextEditingController();
@@ -53,17 +65,54 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
     super.dispose();
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _submit() async {
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.of(context).pop(<String, String>{
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'scholarship_type': _selectedScholarshipType,
-      'password': _passwordController.text,
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
     });
+
+    try {
+      final response = await BackendApi.postForm(
+        'insert_user.php',
+        body: {
+          'username': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'role': _role,
+        },
+        timeout: const Duration(seconds: 45),
+        retries: 2,
+      );
+
+      final userId = (response['user_id'] ?? response['id'] ?? '')
+          .toString()
+          .trim();
+      if (userId.isEmpty) {
+        throw const FormatException('The backend did not return a user id.');
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(<String, String>{
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'role': _role,
+        'user_id': userId,
+        if (_isScholar) 'scholarship_category': _selectedScholarshipType,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('FormatException: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -92,12 +141,25 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Finish setting up your scholar account with the Google details we received.',
+                    _isScholar
+                        ? 'Finish setting up your scholar account with the Google details we received.'
+                        : 'Finish setting up your admin account with the Google details we received.',
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontSize: 14,
                     ),
                   ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   _field(
                     controller: _nameController,
@@ -127,24 +189,26 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     },
                   ),
                   const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    value: _selectedScholarshipType,
-                    decoration: _inputDecoration('Scholarship Type'),
-                    items: _scholarshipTypes
-                        .map(
-                          (type) => DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedScholarshipType = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 14),
+                  if (_isScholar) ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedScholarshipType,
+                      decoration: _inputDecoration('Scholarship Type'),
+                      items: _scholarshipTypes
+                          .map(
+                            (type) => DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedScholarshipType = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _field(
                     controller: _passwordController,
                     label: 'Password',
@@ -181,14 +245,14 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     children: [
                       Expanded(
                         child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                           child: const Text('Cancel'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: _submit,
+                          onPressed: _isSubmitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6A1B9A),
                             foregroundColor: Colors.white,
@@ -197,10 +261,19 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text(
-                            'Create Account',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Create Account',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                         ),
                       ),
                     ],
