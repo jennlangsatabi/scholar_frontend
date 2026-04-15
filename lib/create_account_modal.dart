@@ -76,14 +76,42 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
     });
 
     try {
-      final response = await BackendApi.postForm(
-        'insert_user.php',
-        body: {
+      final nameParts = _splitName(_nameController.text.trim());
+      final backendScholarshipCategory = _toBackendScholarshipCategory(
+        _selectedScholarshipType,
+      );
+
+      final Map<String, String> body;
+      final String endpoint;
+
+      if (_isScholar) {
+        endpoint = 'add_scholar.php';
+        body = {
+          'user_id': '0',
+          'first_name': nameParts.firstName,
+          'middle_name': nameParts.middleName,
+          'last_name': nameParts.lastName,
+          'course': 'Not specified',
+          'year_level': '1',
+          'scholarship_category': backendScholarshipCategory,
+          'scholarship_status': 'pending',
+          'username': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        };
+      } else {
+        endpoint = 'insert_user.php';
+        body = {
           'username': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
           'role': _role,
-        },
+        };
+      }
+
+      final response = await BackendApi.postForm(
+        endpoint,
+        body: body,
         timeout: const Duration(seconds: 45),
         retries: 2,
       );
@@ -101,7 +129,10 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         'email': _emailController.text.trim(),
         'role': _role,
         'user_id': userId,
-        if (_isScholar) 'scholarship_category': _selectedScholarshipType,
+        if (_isScholar) ...{
+          'scholarship_category': backendScholarshipCategory,
+          'scholarship_type': _selectedScholarshipType,
+        },
       });
     } catch (e) {
       if (!mounted) return;
@@ -113,6 +144,45 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  ({String firstName, String middleName, String lastName}) _splitName(String raw) {
+    final cleaned = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (cleaned.isEmpty) {
+      return (firstName: 'Google', middleName: '', lastName: 'User');
+    }
+
+    final parts = cleaned.split(' ');
+    if (parts.length == 1) {
+      return (firstName: parts.first, middleName: '', lastName: 'User');
+    }
+
+    if (parts.length == 2) {
+      return (firstName: parts[0], middleName: '', lastName: parts[1]);
+    }
+
+    return (
+      firstName: parts.first,
+      middleName: parts.sublist(1, parts.length - 1).join(' '),
+      lastName: parts.last,
+    );
+  }
+
+  String _toBackendScholarshipCategory(String displayType) {
+    final normalized = displayType.trim().toLowerCase();
+    if (normalized.contains('student') && normalized.contains('assistant')) {
+      return 'student_assistant';
+    }
+    if (normalized.contains('varsity')) {
+      return 'varsity';
+    }
+    if (normalized.contains('academic')) {
+      return 'academic';
+    }
+    if (normalized.contains('gift')) {
+      return 'gift_of_education';
+    }
+    return 'student_assistant';
   }
 
   @override

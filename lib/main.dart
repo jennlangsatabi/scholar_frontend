@@ -204,14 +204,19 @@ class _MainPortalPageState extends State<MainPortalPage> {
     final scholarshipCategory =
         (result['scholarship_category'] ?? details['scholarship_category'] ?? '')
             .trim();
+    final scholarshipType = (result['scholarship_type'] ?? '').trim();
 
     setState(() {
       currentUserId = userId;
       currentUsername = displayName;
       currentAdminName = displayName;
       selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
+      if (scholarshipType.isNotEmpty) {
+        selectedScholarType = scholarshipType;
+      } else if (scholarshipCategory.isNotEmpty) {
+        selectedScholarType = _displayScholarshipType(scholarshipCategory);
+      }
       if (scholarshipCategory.isNotEmpty) {
-        selectedScholarType = scholarshipCategory;
         currentScholarCategory = scholarshipCategory;
       }
       currentState = role == 'admin'
@@ -226,6 +231,21 @@ class _MainPortalPageState extends State<MainPortalPage> {
         ),
       ),
     );
+  }
+
+  String _displayScholarshipType(String category) {
+    switch (category.trim().toLowerCase()) {
+      case 'student_assistant':
+        return 'Student Assistant Scholar';
+      case 'varsity':
+        return 'Varsity Scholar';
+      case 'academic':
+        return 'Academic Scholar';
+      case 'gift_of_education':
+        return 'Gift of Education Scholar';
+      default:
+        return category.isNotEmpty ? category : 'Student Assistant Scholar';
+    }
   }
 
   @override
