@@ -142,6 +142,10 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           );
         }
 
+        BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+        BackendApi.invalidateCache(pathContains: 'get_admin_stats.php');
+        BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
+
         if (!mounted) return;
         Navigator.of(context).pop(<String, String>{
           'name': _nameController.text.trim(),

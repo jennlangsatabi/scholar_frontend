@@ -70,6 +70,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
 
     try {
       await _ensureScholarDirectory();
+      BackendApi.invalidateCache(pathContains: 'get_admin_stats.php');
 
       final decoded = await BackendApi.getJson(
         'get_admin_stats.php',
@@ -365,7 +366,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
       barrierDismissible: false,
       builder: (context) => const AccountRequestsModal(),
     );
+    BackendApi.invalidateCache(pathContains: 'get_admin_stats.php');
+    BackendApi.invalidateCache(pathContains: 'get_scholars.php');
     await _loadPendingAccountRequests();
+    await _fetchAdminStats(silent: true);
   }
 
   Widget _buildStatsGrid() {

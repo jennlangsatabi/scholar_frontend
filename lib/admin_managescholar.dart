@@ -75,6 +75,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      BackendApi.invalidateCache(pathContains: 'get_scholars.php');
       _scholars = await BackendApi.unwrapList(
         BackendApi.getJson(
           'get_scholars.php',
