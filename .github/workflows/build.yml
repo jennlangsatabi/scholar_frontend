@@ -26,6 +26,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Validate SONAR_TOKEN
         shell: bash
         run: |
@@ -38,6 +44,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           args: >
+            -Dsonar.scanner.skipJreProvisioning=true
             -Dsonar.organization=jennlangsatabi
             -Dsonar.projectKey=jennlangsatabi_scholar_frontend
             -Dsonar.projectName=scholar_frontend
