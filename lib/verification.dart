@@ -342,11 +342,6 @@ class _VerificationScreenState extends State<VerificationScreen>
     return values;
   }
 
-  String _resolveImageUrl(Map<String, dynamic> doc) {
-    final urls = _resolveImageUrls(doc);
-    return urls.isEmpty ? '' : urls.first;
-  }
-
   List<String> _resolveImageUrls(Map<String, dynamic> doc) {
     final rawCandidates = _resolveRawFileCandidates(doc);
     if (rawCandidates.isEmpty) return <String>[];
@@ -565,7 +560,7 @@ class _VerificationScreenState extends State<VerificationScreen>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -621,7 +616,7 @@ class _VerificationScreenState extends State<VerificationScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -769,15 +764,15 @@ class _VerificationScreenState extends State<VerificationScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _shiftLightness(color, 0.30).withOpacity(0.55),
-            Colors.white.withOpacity(0.96),
+            _shiftLightness(color, 0.30).withValues(alpha: 0.55),
+            Colors.white.withValues(alpha: 0.96),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -801,9 +796,9 @@ class _VerificationScreenState extends State<VerificationScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withOpacity(0.18)),
+                      border: Border.all(color: color.withValues(alpha: 0.18)),
                     ),
                     child: Icon(icon, color: color, size: 18),
                   ),
@@ -999,9 +994,9 @@ class _VerificationScreenState extends State<VerificationScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         status,
@@ -1096,3 +1091,4 @@ class _ResilientNetworkImageState extends State<_ResilientNetworkImage> {
     );
   }
 }
+

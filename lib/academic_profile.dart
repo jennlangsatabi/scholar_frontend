@@ -252,7 +252,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
       ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
-        color: const Color(0xFF2D0D44).withOpacity(0.84),
+        color: const Color(0xFF2D0D44).withValues(alpha: 0.84),
         child: Row(
           children: [
             Stack(
@@ -447,7 +447,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                 _modalField(yearController, 'Year Level'),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: selectedAcademic,
+                  initialValue: selectedAcademic,
                   items: const ['Type A', 'Type B', 'Type C']
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
@@ -492,7 +492,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                     'monthly_stipend': stipendController.text.trim(),
                   },
                 );
-                if (!mounted) return;
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 await _loadProfile();
               } catch (e) {
@@ -619,7 +619,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -630,3 +630,5 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
     );
   }
 }
+
+

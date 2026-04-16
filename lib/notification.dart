@@ -480,7 +480,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: visibility,
+                  initialValue: visibility,
                   decoration: InputDecoration(
                     labelText: 'Visibility',
                     filled: true,
@@ -547,7 +547,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           );
                         }
 
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -874,7 +874,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
       ),
       child: Container(
-        color: const Color(0xFF3B125A).withOpacity(0.86),
+        color: const Color(0xFF3B125A).withValues(alpha: 0.86),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
         child: Row(
           children: [
@@ -882,7 +882,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: ClipRRect(
@@ -1026,7 +1026,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.20)),
+        border: Border.all(color: color.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
@@ -1034,7 +1034,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             width: iconSize,
             height: iconSize,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color),
@@ -1196,7 +1196,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -1441,7 +1441,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1713,7 +1713,7 @@ class _NotificationChatSheetState extends State<_NotificationChatSheet> {
                                     _sending = false;
                                   });
                                 } catch (e) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   setState(() => _sending = false);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -1773,7 +1773,7 @@ class _NotificationChatSheetState extends State<_NotificationChatSheet> {
               Text(
                 time,
                 style: TextStyle(
-                  color: fg.withOpacity(0.75),
+                  color: fg.withValues(alpha: 0.75),
                   fontSize: 11,
                 ),
               ),
@@ -1784,3 +1784,5 @@ class _NotificationChatSheetState extends State<_NotificationChatSheet> {
     );
   }
 }
+
+

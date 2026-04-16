@@ -25,7 +25,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
   static const _surface = Colors.white;
   static const _surfaceTint = Color(0xFFF8F5FB);
   static const _accent = Color(0xFF6A1B9A);
-  static const _accent2 = Color(0xFF4A148C);
   static const _border = Color(0xFFE6DFF0);
 
   @override
@@ -136,9 +135,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       const SizedBox(width: 12),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.65),
+                          color: Colors.white.withValues(alpha: 0.65),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withOpacity(0.6)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
                         ),
                         child: IconButton(
                           tooltip: 'Refresh',
@@ -289,15 +288,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _shiftLightness(accent, 0.32).withOpacity(0.55),
-            _surface.withOpacity(0.96),
+            _shiftLightness(accent, 0.32).withValues(alpha: 0.55),
+            _surface.withValues(alpha: 0.96),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withOpacity(0.20)),
+        border: Border.all(color: accent.withValues(alpha: 0.20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             offset: const Offset(0, 8),
           )
@@ -319,9 +318,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(0.12),
+                  color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: accent.withOpacity(0.18)),
+                  border: Border.all(color: accent.withValues(alpha: 0.18)),
                 ),
                 child: Icon(icon, color: accent, size: 18),
               ),
@@ -367,12 +366,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       height: 450,
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
-        color: _surface.withOpacity(0.96),
+        color: _surface.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
           )
         ],
@@ -480,7 +479,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
           ),
           const SizedBox(height: 30),
-          ...legend.map((row) => _legendItem(row.$1, row.$2)).toList(),
+          ...legend.map((row) => _legendItem(row.$1, row.$2)),
         ],
       ),
     );
@@ -597,7 +596,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: _ink.withOpacity(0.86),
+              color: _ink.withValues(alpha: 0.86),
             ),
           ),
         ],
@@ -668,8 +667,8 @@ class _DecorBlob extends StatelessWidget {
           shape: BoxShape.circle,
           gradient: RadialGradient(
             colors: [
-              color.withOpacity(0.22),
-              color.withOpacity(0.0),
+              color.withValues(alpha: 0.22),
+              color.withValues(alpha: 0.0),
             ],
           ),
         ),
@@ -677,3 +676,4 @@ class _DecorBlob extends StatelessWidget {
     );
   }
 }
+

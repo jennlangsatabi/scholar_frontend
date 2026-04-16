@@ -152,7 +152,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
             child: Image.asset('assets/jmcbg.jpg', fit: BoxFit.cover),
           ),
           Positioned.fill(
-            child: Container(color: const Color(0xFF3B125A).withOpacity(0.68)),
+            child: Container(color: const Color(0xFF3B125A).withValues(alpha: 0.68)),
           ),
           SafeArea(
             child: Center(
@@ -168,7 +168,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   border: Border.all(color: const Color(0xFFE1D6EB)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
                     ),
@@ -212,7 +212,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(16),
           ),
           child: const Icon(Icons.assignment_turned_in_rounded,
@@ -481,7 +481,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white24),
       ),
@@ -601,7 +601,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
         border: Border.all(color: const Color(0xFFE1D6EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -632,7 +632,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       dropdownColor: Colors.white,
       style: const TextStyle(color: Color(0xFF2D0D44)),
       decoration: _inputDecoration(label),
@@ -795,7 +795,7 @@ class EvaluationRecordScreen extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE1D6EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -945,7 +945,7 @@ class EvaluationRecordScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white24),
       ),
@@ -1003,7 +1003,7 @@ class EvaluationRecordScreen extends StatelessWidget {
             child: Image.asset('assets/jmcbg.jpg', fit: BoxFit.cover),
           ),
           Positioned.fill(
-            child: Container(color: const Color(0xFF3B125A).withOpacity(0.68)),
+            child: Container(color: const Color(0xFF3B125A).withValues(alpha: 0.68)),
           ),
           SafeArea(
             child: Center(
@@ -1018,7 +1018,7 @@ class EvaluationRecordScreen extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFE1D6EB)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
                     ),
@@ -1033,7 +1033,7 @@ class EvaluationRecordScreen extends StatelessWidget {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(Icons.visibility_rounded,
@@ -1181,3 +1181,4 @@ class _RatingItem {
 
   const _RatingItem(this.title, this.description);
 }
+

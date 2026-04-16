@@ -9,10 +9,10 @@ import 'services/api_config.dart';
 class StudentUploadScreen extends StatefulWidget {
   final String userId;
 
-  const StudentUploadScreen({Key? key, required this.userId}) : super(key: key);
+  const StudentUploadScreen({super.key, required this.userId});
 
   @override
-  _StudentUploadScreenState createState() => _StudentUploadScreenState();
+  State<StudentUploadScreen> createState() => _StudentUploadScreenState();
 }
 
 class _StudentUploadScreenState extends State<StudentUploadScreen> {
@@ -131,6 +131,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         average = _calculateAverage(extractedText);
         systemStatus = (average >= 85.0) ? 'Auto-Approved' : 'Pending';
         if (extractedText.trim().isEmpty) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -169,6 +170,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Document successfully uploaded!'),
@@ -179,6 +181,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           _remarksController.clear();
         });
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Upload failed: ${response.body}'),
@@ -245,7 +248,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           top: 10,
                           right: 10,
                           child: CircleAvatar(
-                            backgroundColor: Colors.white.withOpacity(0.8),
+                            backgroundColor: Colors.white.withValues(alpha: 0.8),
                             child: IconButton(
                               icon: const Icon(Icons.close, color: Colors.red),
                               onPressed: () =>
@@ -348,3 +351,4 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     );
   }
 }
+

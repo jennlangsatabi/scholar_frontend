@@ -219,7 +219,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
         decoration: BoxDecoration(
-          color: const Color(0xFF2D0D44).withOpacity(0.82),
+          color: const Color(0xFF2D0D44).withValues(alpha: 0.82),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -235,7 +235,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
                   width: iconBox,
                   height: iconBox,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
@@ -387,7 +387,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
   Widget _buildStatCard(_StatTile tile) {
     final c0 = _shiftLightness(tile.accent, 0.32);
     final c1 = _shiftLightness(tile.accent, 0.10);
-    final tint = tile.accent.withOpacity(0.06);
+    final tint = tile.accent.withValues(alpha: 0.06);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -400,12 +400,12 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 10),
           ),
         ],
-        border: Border.all(color: tile.accent.withOpacity(0.22)),
+        border: Border.all(color: tile.accent.withValues(alpha: 0.22)),
       ),
       child: Stack(
         children: [
@@ -431,7 +431,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: tile.accent.withOpacity(0.18),
+                      color: tile.accent.withValues(alpha: 0.18),
                       blurRadius: 14,
                       offset: const Offset(0, 8),
                     ),
@@ -485,7 +485,7 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 6),
           )
@@ -614,9 +614,9 @@ class _StudentAssistantDashboardState extends State<StudentAssistantDashboard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         status,
@@ -671,3 +671,4 @@ class _StatTile {
     required this.icon,
   });
 }
+

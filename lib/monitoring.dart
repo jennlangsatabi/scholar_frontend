@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -584,7 +584,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                       'user_id': userId.toString(),
                       'supervisor': supervisorController.text.trim(),
                     });
-                if (!mounted) return;
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _showSnackBar('Supervisor updated for $name.');
                 _loadScholars(); // Refresh the table [cite: 27]
@@ -645,6 +645,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   }
 
   void _showSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -889,7 +890,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color: Colors.black.withValues(alpha: 0.08),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -912,7 +913,8 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                                             ),
                                             columnSpacing: 24,
                                             headingRowHeight: 64,
-                                            dataRowHeight: 62,
+                                            dataRowMinHeight: 62,
+                                            dataRowMaxHeight: 62,
                                             columns: const [
                                           DataColumn(
                                             label: Text(
@@ -1304,7 +1306,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 15,
                               offset: const Offset(0, 5))
                         ]),
@@ -1471,7 +1473,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         if (!mounted) return;
         setState(() => _submissionFilter = value);
       },
-      selectedColor: const Color(0xFF6A1B9A).withOpacity(0.16),
+      selectedColor: const Color(0xFF6A1B9A).withValues(alpha: 0.16),
       backgroundColor: Colors.white,
       labelStyle: TextStyle(
         fontWeight: FontWeight.w700,
@@ -1571,15 +1573,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         },
       );
       await _loadScholars();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Due dates updated.')),
-      );
+      _showSnackBar('Due dates updated.');
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update due dates: $e')),
-      );
+      _showSnackBar('Failed to update due dates: $e');
     }
   }
 
@@ -1719,7 +1715,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                     'game_schedule': gameScheduleController.text.trim(),
                   },
                 );
-                if (!mounted) return;
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _showSnackBar('Varsity details updated for $name.');
                 _loadScholars();
@@ -1795,7 +1791,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1883,7 +1879,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: selectedAcademicType,
+                initialValue: selectedAcademicType,
                 items: academicTypeOptions
                     .map(
                       (label) =>
@@ -1951,7 +1947,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                     'monthly_stipend': stipendController.text.trim(),
                   },
                 );
-                if (!mounted) return;
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _showSnackBar('Academic details updated for $name.');
                 _loadScholars();
@@ -2026,7 +2022,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2115,7 +2111,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedGiftType,
+                  initialValue: selectedGiftType,
                   items: ScholarshipTypes.giftTypeLabels
                       .map(
                         (label) =>
@@ -2151,7 +2147,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedRenewalStatus,
+                  initialValue: selectedRenewalStatus,
                   items: renewalOptions
                       .map(
                         (label) =>
@@ -2217,6 +2213,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                     };
                   }).toList();
                 });
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _showSnackBar('Gift of Education details updated for $name.');
                 _loadScholars();
@@ -2291,7 +2288,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2410,9 +2407,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         ThemeData.estimateBrightnessForColor(color) == Brightness.light;
     final foregroundColor = isLightBg ? const Color(0xFF2D0D44) : Colors.white;
     final surfaceOverlay =
-        isLightBg ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.16);
+        isLightBg ? Colors.black.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.16);
     final surfaceBorder =
-        isLightBg ? Colors.black.withOpacity(0.10) : Colors.white.withOpacity(0.18);
+        isLightBg ? Colors.black.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.18);
 
     final gradientStart = _shiftLightness(color, isLightBg ? -0.02 : 0.08);
     final gradientEnd = _shiftLightness(color, isLightBg ? -0.14 : -0.08);
@@ -2435,7 +2432,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             border: Border.all(color: surfaceBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
@@ -2491,7 +2488,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                               const Spacer(),
                               Icon(
                                 Icons.chevron_right_rounded,
-                                color: foregroundColor.withOpacity(0.85),
+                                color: foregroundColor.withValues(alpha: 0.85),
                               ),
                             ],
                           ],
@@ -2542,7 +2539,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: foregroundColor.withOpacity(0.78),
+                                      color: foregroundColor.withValues(alpha: 0.78),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2637,7 +2634,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -3210,3 +3207,5 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     return '';
   }
 }
+
+

@@ -445,7 +445,7 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -481,7 +481,7 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
         border: Border.all(color: const Color(0xFFAB47BC), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -625,7 +625,7 @@ class _UploadFilesPageState extends State<UploadFilesPage> {
         border: Border.all(color: const Color(0xFFDABCE8)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           border: InputBorder.none,
           labelText: label,
@@ -804,3 +804,4 @@ class _ClientAnalysisResult {
   final double average;
   final String systemStatus;
 }
+

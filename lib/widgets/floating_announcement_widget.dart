@@ -240,7 +240,7 @@ class _FloatingAnnouncementWidgetState extends State<FloatingAnnouncementWidget>
                 border: Border.all(color: const Color(0xFFE5DDF0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha: 0.18),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -386,7 +386,7 @@ class _FloatingAnnouncementWidgetState extends State<FloatingAnnouncementWidget>
         border: Border.all(color: const Color(0xFFE7DEF2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -586,8 +586,8 @@ class _FloatingAnnouncementWidgetState extends State<FloatingAnnouncementWidget>
                   radius: 14,
                   backgroundColor: const Color(0xFFE5D7F2),
                   backgroundImage:
-                      (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
-                  child: (avatarUrl == null || avatarUrl.isEmpty)
+                      (avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+                  child: (avatarUrl.isEmpty)
                       ? const Icon(Icons.person, size: 16, color: Color(0xFF6C4A89))
                       : null,
                 ),
@@ -689,4 +689,5 @@ class _CommentNode {
     required this.children,
   });
 }
+
 

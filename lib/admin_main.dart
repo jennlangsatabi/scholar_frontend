@@ -184,7 +184,7 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
         ),
       ),
       child: Container(
-        color: const Color(0xFF3B125A).withOpacity(0.85),
+        color: const Color(0xFF3B125A).withValues(alpha: 0.85),
         padding: EdgeInsets.symmetric(horizontal: isDesktop ? 30 : 16),
         child: Row(
           children: [
@@ -236,7 +236,7 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: isActive ? Colors.white.withOpacity(0.15) : Colors.transparent,
+          color: isActive ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
         ),
         child: ListTile(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -332,3 +332,4 @@ class _AdminMainSkeletonState extends State<AdminMainSkeleton> {
     );
   }
 }
+

@@ -156,7 +156,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
         ),
       ),
       child: Container(
-        color: const Color(0xFF3B125A).withOpacity(0.86),
+        color: const Color(0xFF3B125A).withValues(alpha: 0.86),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
         child: Row(
           children: [
@@ -164,7 +164,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.sports_martial_arts_rounded,
@@ -231,7 +231,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -283,7 +283,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A148C).withOpacity(0.18),
+            color: const Color(0xFF4A148C).withValues(alpha: 0.18),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -298,7 +298,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -310,7 +310,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -322,9 +322,9 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.14),
+                  color: Colors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withOpacity(0.18)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                 ),
                 child: const Text(
                   'LIVE VARSITY SCHEDULE',
@@ -362,7 +362,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.14),
+                      color: Colors.white.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
@@ -375,7 +375,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
                     child: Text(
                       'Stay tuned for the next game schedule update.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.86),
+                        color: Colors.white.withValues(alpha: 0.86),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -468,7 +468,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -479,7 +479,7 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: color.withOpacity(0.12),
+              backgroundColor: color.withValues(alpha: 0.12),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 12),
@@ -536,3 +536,4 @@ class _VarsityDashboardState extends State<VarsityDashboard> {
     return "$hour:$minute $suffix";
   }
 }
+

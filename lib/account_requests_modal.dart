@@ -340,7 +340,7 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF3B125A).withOpacity(0.08),
+        color: const Color(0xFF3B125A).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -354,3 +354,4 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
     );
   }
 }
+

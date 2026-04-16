@@ -599,7 +599,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -611,7 +611,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.14),
+              color: Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -719,15 +719,15 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _shiftLightness(color, 0.30).withOpacity(0.55),
-            Colors.white.withOpacity(0.96),
+            _shiftLightness(color, 0.30).withValues(alpha: 0.55),
+            Colors.white.withValues(alpha: 0.96),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -749,9 +749,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withOpacity(0.18)),
+                  border: Border.all(color: color.withValues(alpha: 0.18)),
                 ),
                 child: Icon(icon, color: color, size: 18),
               ),
@@ -870,7 +870,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -909,7 +909,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 6,
                           ),
                         ],
@@ -1033,7 +1033,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1269,7 +1269,7 @@ class _AdminNotificationChatSheetState
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                   child: DropdownButtonFormField<String>(
-                    value: _visibility,
+                    initialValue: _visibility,
                     decoration: InputDecoration(
                       labelText: 'Visibility',
                       filled: true,
@@ -1339,7 +1339,7 @@ class _AdminNotificationChatSheetState
                                     _sending = false;
                                   });
                                 } catch (e) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   setState(() => _sending = false);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -1399,7 +1399,7 @@ class _AdminNotificationChatSheetState
               Text(
                 time,
                 style: TextStyle(
-                  color: fg.withOpacity(0.75),
+                  color: fg.withValues(alpha: 0.75),
                   fontSize: 11,
                 ),
               ),
@@ -1410,3 +1410,4 @@ class _AdminNotificationChatSheetState
     );
   }
 }
+

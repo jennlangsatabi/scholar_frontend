@@ -223,7 +223,7 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
         ),
       ),
       child: Container(
-        color: const Color(0xFF3B125A).withOpacity(0.86),
+        color: const Color(0xFF3B125A).withValues(alpha: 0.86),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
         child: Row(
           children: [
@@ -231,7 +231,7 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.volunteer_activism_rounded,
@@ -386,7 +386,7 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: textColor.withOpacity(0.3)),
+                border: Border.all(color: textColor.withValues(alpha: 0.3)),
               ),
               child: Center(
                 child: Text(
@@ -418,3 +418,4 @@ class _GiftOfEducationDashboardState extends State<GiftOfEducationDashboard> {
     );
   }
 }
+

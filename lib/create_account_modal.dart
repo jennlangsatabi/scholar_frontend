@@ -303,7 +303,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   const SizedBox(height: 14),
                   if (_isScholar) ...[
                     DropdownButtonFormField<String>(
-                      value: _selectedScholarshipType,
+                      initialValue: _selectedScholarshipType,
                       decoration: _inputDecoration('Scholarship Type'),
                       items: _scholarshipTypes
                           .map(

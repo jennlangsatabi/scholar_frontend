@@ -382,7 +382,7 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
     bool isActive = activePage == label;
     return ListTile(
       // Highlight the active menu item
-      tileColor: isActive ? Colors.white.withOpacity(0.1) : Colors.transparent,
+      tileColor: isActive ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
       leading: _buildNavIcon(icon, label, isActive),
       title: Text(
         label,
@@ -498,7 +498,7 @@ class _ScholarMainSkeletonState extends State<ScholarMainSkeleton> {
             ),
           ),
           child: Container(
-            color: const Color(0xFF9C27B0).withOpacity(0.7),
+            color: const Color(0xFF9C27B0).withValues(alpha: 0.7),
             child: SafeArea(
               bottom: false,
               child: Stack(
@@ -611,7 +611,7 @@ class _AnnouncementToast extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE1D6EB)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.18),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -670,3 +670,4 @@ class _AnnouncementToast extends StatelessWidget {
     );
   }
 }
+

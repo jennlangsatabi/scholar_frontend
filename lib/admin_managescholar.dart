@@ -567,7 +567,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                               const SizedBox(height: 10),
                             ],
                             DropdownButtonFormField<String>(
-                              value: _selectedFormCategory == 'All'
+                              initialValue: _selectedFormCategory == 'All'
                                   ? 'Student Assistant'
                                   : _selectedFormCategory,
                               items: _categories
@@ -595,7 +595,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             const SizedBox(height: 10),
                             if (_selectedFormCategory == 'Academic Scholar') ...[
                               DropdownButtonFormField<String>(
-                                value: _selectedAcademicType,
+                                initialValue: _selectedAcademicType,
                                 items: const ['Type A', 'Type B', 'Type C']
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -611,7 +611,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             ],
                             if (_selectedFormCategory == 'Varsity Scholar') ...[
                               DropdownButtonFormField<String>(
-                                value: _selectedSportType,
+                                initialValue: _selectedSportType,
                                 items: const ['Basketball', 'Volleyball']
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -626,7 +626,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             ],
                             if (_selectedFormCategory == 'Gift of Education') ...[
                               DropdownButtonFormField<String>(
-                                value: _selectedGiftType,
+                                initialValue: _selectedGiftType,
                                 items: ScholarshipTypes.giftTypeOptions.keys
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -812,7 +812,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -858,7 +858,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           ),
         );
         final categoryFilter = DropdownButtonFormField<String>(
-          value: _selectedFilterCategory,
+          initialValue: _selectedFilterCategory,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
@@ -1042,15 +1042,15 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _shiftLightness(color, 0.30).withOpacity(0.55),
-            Colors.white.withOpacity(0.96),
+            _shiftLightness(color, 0.30).withValues(alpha: 0.55),
+            Colors.white.withValues(alpha: 0.96),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.22)),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -1074,9 +1074,9 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withOpacity(0.18)),
+                      border: Border.all(color: color.withValues(alpha: 0.18)),
                     ),
                     child: Icon(icon, color: color, size: 18),
                   ),
@@ -1292,7 +1292,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1543,3 +1543,4 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     return ScholarshipTypes.giftTypeLabel(raw);
   }
 }
+

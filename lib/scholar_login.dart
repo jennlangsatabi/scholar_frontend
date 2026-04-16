@@ -247,7 +247,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: Colors.white24),
           ),
@@ -330,7 +330,7 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
@@ -421,3 +421,4 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
     );
   }
 }
+

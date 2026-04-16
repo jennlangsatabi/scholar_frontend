@@ -313,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
-        color: const Color(0xFF2D0D44).withOpacity(0.84),
+        color: const Color(0xFF2D0D44).withValues(alpha: 0.84),
         child: Row(
           children: [
             Stack(
@@ -535,7 +535,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (isGift) ...[
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: selectedGift,
+                    initialValue: selectedGift,
                     items: ScholarshipTypes.giftTypeLabels
                         .map((e) => DropdownMenuItem(
                               value: e,
@@ -590,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         isGift ? renewalStatusController.text.trim() : '',
                   },
                 );
-                if (!mounted) return;
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 await _loadProfile();
               } catch (e) {
@@ -646,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -711,3 +711,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
 }
+
+

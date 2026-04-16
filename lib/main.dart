@@ -300,7 +300,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
 
           // Global Purple Tint
           Positioned.fill(
-            child: Container(color: const Color(0xFF3B125A).withOpacity(0.6)),
+            child: Container(color: const Color(0xFF3B125A).withValues(alpha: 0.6)),
           ),
 
           // Center Branded Glass Card
@@ -392,15 +392,15 @@ class _MainPortalPageState extends State<MainPortalPage> {
                             vertical: verticalPadding,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF9C27B0).withOpacity(0.4),
+                            color: const Color(0xFF9C27B0).withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
+                                color: Colors.black.withValues(alpha: 0.25),
                                 blurRadius: 25,
                                 offset: const Offset(0, 10),
                               ),
@@ -447,9 +447,9 @@ class _GlassActionButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.18),
+          color: Colors.white.withValues(alpha: 0.18),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withOpacity(0.35)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -470,3 +470,4 @@ class _GlassActionButton extends StatelessWidget {
     );
   }
 }
+

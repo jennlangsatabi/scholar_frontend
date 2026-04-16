@@ -156,7 +156,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -295,7 +295,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            value: selectedAudience,
+            initialValue: selectedAudience,
             isExpanded: true,
             items: _audiences
                 .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -332,7 +332,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
               )
             else
               DropdownButtonFormField<String>(
-                value: _selectedScholarId,
+                initialValue: _selectedScholarId,
                 isExpanded: true,
                 items: _scholars
                     .map((s) => DropdownMenuItem(
@@ -398,3 +398,4 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     return name.isEmpty ? email : '$name • $email';
   }
 }
+

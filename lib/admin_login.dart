@@ -68,6 +68,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             _showError("Login succeeded but no admin ID was returned by PHP.");
             return;
           }
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Welcome, ${data['username']}!")),
           );
@@ -160,6 +161,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   void _showError(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
     );
@@ -244,7 +246,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
@@ -335,3 +337,4 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     );
   }
 }
+
