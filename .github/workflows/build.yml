@@ -37,6 +37,22 @@ jobs:
       - name: Build
         run: flutter pub get
 
+      - name: Configure SonarCloud new code
+        shell: bash
+        run: |
+          curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+            -X POST "https://sonarcloud.io/api/settings/set" \
+            -d "component=VHIANCEERICH_scholar_frontend" \
+            -d "key=sonar.leak.period" \
+            -d "value=30"
+          curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+            -X POST "https://sonarcloud.io/api/settings/set" \
+            -d "component=VHIANCEERICH_scholar_frontend" \
+            -d "key=sonar.leak.period.type" \
+            -d "value=days"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
