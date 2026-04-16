@@ -16,10 +16,6 @@ jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: https://sonarcloud.io
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,31 +28,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Validate SONAR_TOKEN
-        shell: bash
-        run: |
-          if [ -z "${SONAR_TOKEN}" ]; then
-            echo "::warning title=Missing SONAR_TOKEN::Set repository secret SONAR_TOKEN to publish SonarCloud results."
-          fi
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
-        continue-on-error: true
-        with:
-          args: >
-            -Dsonar.scanner.skipJreProvisioning=true
-            -Dsonar.organization=jennlangsatabi
-            -Dsonar.projectKey=jennlangsatabi_scholar_frontend
-            -Dsonar.projectName=scholar_frontend
-            -Dsonar.verbose=true
-
-      - name: Show SonarCloud report URL
-        if: always()
-        shell: bash
-        run: |
-          if [ -f .scannerwork/report-task.txt ]; then
-            echo "---- .scannerwork/report-task.txt ----"
-            cat .scannerwork/report-task.txt
-          else
-            echo "::warning title=SonarCloud scan did not complete::report-task.txt not found. The workflow will continue, but Sonar analysis was not published."
-          fi
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
