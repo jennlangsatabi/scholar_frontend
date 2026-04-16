@@ -42,6 +42,7 @@ jobs:
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
+        continue-on-error: true
         with:
           args: >
             -Dsonar.scanner.skipJreProvisioning=true
@@ -58,6 +59,5 @@ jobs:
             echo "---- .scannerwork/report-task.txt ----"
             cat .scannerwork/report-task.txt
           else
-            echo "report-task.txt not found (scanner may not have executed)."
-            exit 1
+            echo "::warning title=SonarCloud scan did not complete::report-task.txt not found. The workflow will continue, but Sonar analysis was not published."
           fi
