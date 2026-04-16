@@ -36,8 +36,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "${SONAR_TOKEN}" ]; then
-            echo "::error title=Missing SONAR_TOKEN::Set repository secret SONAR_TOKEN."
-            exit 1
+            echo "::warning title=Missing SONAR_TOKEN::Set repository secret SONAR_TOKEN to publish SonarCloud results."
           fi
 
       - name: SonarCloud Scan
