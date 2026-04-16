@@ -46,8 +46,8 @@ jobs:
         with:
           args: >
             -Dsonar.scanner.skipJreProvisioning=true
-            -Dsonar.organization=jennlangsatabi
-            -Dsonar.projectKey=jennlangsatabi_scholar_frontend
+            -Dsonar.organization=VHIANCEERICH
+            -Dsonar.projectKey=VHIANCEERICH_scholar_frontend
             -Dsonar.projectName=scholar_frontend
             -Dsonar.verbose=true
 
