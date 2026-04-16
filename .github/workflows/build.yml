@@ -16,7 +16,6 @@ jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,8 +28,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Build
+        run: flutter pub get
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#test
