@@ -313,6 +313,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildHeaderBanner(),
+                  const SizedBox(height: 16),
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -538,6 +540,73 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           validator: _requiredText('Last name is required'),
         ),
       ],
+    );
+  }
+
+  Widget _buildHeaderBanner() {
+    final title = _isScholar ? 'Scholar Create Account' : 'Create Account';
+    final subtitle = _isScholar
+        ? 'Fill in the scholar details below to register a new account.'
+        : 'Provide the account details below to continue.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4A2A6A), Color(0xFF7A49A5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A4A2A6A),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'SCHOLAR PORTAL',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.88),
+              fontSize: 13,
+              height: 1.35,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
