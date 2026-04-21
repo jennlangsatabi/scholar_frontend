@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'create_account_modal.dart';
 import 'services/backend_api.dart';
 import 'scholarship_types.dart';
 
@@ -372,6 +373,39 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     _selectedFormCategory = _selectedFilterCategory == 'All'
         ? 'Student Assistant'
         : _selectedFilterCategory;
+  }
+
+  Future<void> _openCreateScholarAccountModal() async {
+    final initialScholarshipType = _selectedFilterCategory == 'All'
+        ? _selectedFormCategory
+        : _selectedFilterCategory;
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CreateAccountModal(
+        initialName: '',
+        initialEmail: '',
+        initialScholarshipType: initialScholarshipType,
+        initialRole: 'scholar',
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    final createdCategory =
+        (result['scholarship_type'] ?? initialScholarshipType).trim();
+    setState(() {
+      _selectedFilterCategory =
+          createdCategory.isEmpty ? initialScholarshipType : createdCategory;
+    });
+
+    BackendApi.invalidateCache(pathContains: 'get_scholars.php');
+    BackendApi.invalidateCache(pathContains: 'get_monitoring_summary.php');
+    _toast('Scholar account created successfully.', Colors.green);
+    await fetchScholars();
   }
 
   void _showDeleteConfirmation(String userId, String name) {
@@ -881,7 +915,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
               ? null
               : () {
                   _clearForm();
-                  _showFormDialog(title: 'Add New Scholar', onSave: addScholar);
+                  _openCreateScholarAccountModal();
                 },
           icon: const Icon(Icons.person_add_alt_1),
           label: const Text('Add Scholar'),

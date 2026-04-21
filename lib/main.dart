@@ -11,6 +11,7 @@ import 'scholar_main.dart';
 import 'evaluation_form.dart';
 import 'create_account_modal.dart';
 import 'services/backend_api.dart';
+import 'services/session_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,6 +76,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
   @override
   void initState() {
     super.initState();
+    _restoreSession();
     _tryHandleOAuthCallback();
     BackendApi.warmUp();
     if (_pendingGoogleAccount != null) {
@@ -105,6 +107,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
     final email = (qp['email'] ?? '').trim();
 
     if (status == 'pending_account') {
+      SessionStore.clear();
       currentState = PortalState.login;
       selectedRole = role == 'admin' ? 'Admin' : 'Scholar';
       currentUsername = displayName;
@@ -128,6 +131,8 @@ class _MainPortalPageState extends State<MainPortalPage> {
           'scholarship_category': currentScholarCategory.isNotEmpty
               ? currentScholarCategory
               : _toBackendScholarshipCategory(selectedScholarType),
+        if ((qp['google_id'] ?? '').trim().isNotEmpty)
+          'google_id': (qp['google_id'] ?? '').trim(),
         if (userId.isNotEmpty) 'user_id': userId,
       };
       return;
@@ -157,6 +162,8 @@ class _MainPortalPageState extends State<MainPortalPage> {
             'scholarship_category': currentScholarCategory.isNotEmpty
                 ? currentScholarCategory
                 : _toBackendScholarshipCategory(selectedScholarType),
+          if ((qp['google_id'] ?? '').trim().isNotEmpty)
+            'google_id': (qp['google_id'] ?? '').trim(),
         };
       }
       return;
@@ -169,6 +176,12 @@ class _MainPortalPageState extends State<MainPortalPage> {
         currentAdminName = displayName;
         currentState = PortalState.adminDashboard;
       });
+      SessionStore.write(
+        role: 'admin',
+        userId: userId,
+        adminName: displayName,
+        username: displayName,
+      );
       return;
     }
 
@@ -185,6 +198,15 @@ class _MainPortalPageState extends State<MainPortalPage> {
         currentScholarCategory = _toBackendScholarshipCategory(category);
         currentState = PortalState.scholarDashboard;
       });
+      SessionStore.write(
+        role: 'scholar',
+        userId: userId,
+        username: displayName,
+        scholarType: _displayScholarshipType(
+          category.isNotEmpty ? category : 'Student Assistant Scholar',
+        ),
+        scholarshipCategory: _toBackendScholarshipCategory(category),
+      );
     }
   }
 
@@ -199,6 +221,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
         initialScholarshipType:
             details['scholarship_category'] ?? selectedScholarType,
         initialRole: details['role'] ?? 'scholar',
+        initialGoogleId: details['google_id'] ?? '',
       ),
     );
 
@@ -245,6 +268,13 @@ class _MainPortalPageState extends State<MainPortalPage> {
         currentScholarCategory = scholarshipCategory;
       }
     });
+    SessionStore.write(
+      role: 'scholar',
+      userId: userId,
+      username: displayName,
+      scholarType: selectedScholarType,
+      scholarshipCategory: scholarshipCategory,
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -288,6 +318,61 @@ class _MainPortalPageState extends State<MainPortalPage> {
     return '';
   }
 
+  void _restoreSession() {
+    final session = SessionStore.read();
+    final role = session['role']?.trim().toLowerCase() ?? '';
+    final userId = session['user_id']?.trim() ?? '';
+    if (role.isEmpty || userId.isEmpty) {
+      return;
+    }
+
+    if (role == 'admin') {
+      currentUserId = userId;
+      currentAdminName =
+          (session['admin_name']?.trim().isNotEmpty ?? false)
+              ? session['admin_name']!.trim()
+              : 'Administrator';
+      currentUsername = currentAdminName;
+      selectedRole = 'Admin';
+      currentState = PortalState.adminDashboard;
+      return;
+    }
+
+    if (role == 'scholar') {
+      final scholarshipCategory =
+          (session['scholarship_category'] ?? '').trim();
+      final scholarType = (session['scholar_type'] ?? '').trim();
+      currentUserId = userId;
+      currentUsername = (session['username'] ?? '').trim().isNotEmpty
+          ? session['username']!.trim()
+          : 'Scholar';
+      selectedRole = 'Scholar';
+      currentScholarCategory = scholarshipCategory;
+      selectedScholarType = scholarType.isNotEmpty
+          ? scholarType
+          : _displayScholarshipType(
+              scholarshipCategory.isNotEmpty
+                  ? scholarshipCategory
+                  : 'Student Assistant Scholar',
+            );
+      currentState = PortalState.scholarDashboard;
+    }
+  }
+
+  void _logoutToRoleSelection() {
+    SessionStore.clear();
+    setState(() {
+      currentState = PortalState.roleSelection;
+      selectedRole = '';
+      currentUserId = '';
+      currentUsername = '';
+      currentAdminName = 'Administrator';
+      selectedScholarType = 'Student Assistant Scholar';
+      currentScholarCategory = '';
+      _pendingGoogleAccount = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // --- NAVIGATION LOGIC ---
@@ -295,8 +380,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
     // 1. ADMIN ROUTE
     if (currentState == PortalState.adminDashboard) {
       return AdminMainSkeleton(
-        onLogout: () =>
-            setState(() => currentState = PortalState.roleSelection),
+        onLogout: _logoutToRoleSelection,
         adminName: currentAdminName,
       );
     }
@@ -308,8 +392,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
         username: currentUsername,
         scholarType: selectedScholarType,
         scholarshipCategory: currentScholarCategory,
-        onLogout: () =>
-            setState(() => currentState = PortalState.roleSelection),
+        onLogout: _logoutToRoleSelection,
       );
     }
 
@@ -360,13 +443,21 @@ class _MainPortalPageState extends State<MainPortalPage> {
                         ? AdminLoginScreen(
                             key: const ValueKey('AdminLogin'),
                             onLoginSuccess: (userData) {
+                              final userId = userData['id'].toString();
+                              final adminName =
+                                  userData['name']?.toString() ??
+                                      'Administrator';
                               setState(() {
-                                currentUserId = userData['id'].toString();
-                                currentAdminName =
-                                    userData['name']?.toString() ??
-                                        'Administrator';
+                                currentUserId = userId;
+                                currentAdminName = adminName;
                                 currentState = PortalState.adminDashboard;
                               });
+                              SessionStore.write(
+                                role: 'admin',
+                                userId: userId,
+                                adminName: adminName,
+                                username: adminName,
+                              );
                             },
                             onBack: () => setState(
                                 () => currentState = PortalState.roleSelection),
@@ -374,23 +465,34 @@ class _MainPortalPageState extends State<MainPortalPage> {
                         : ScholarLoginScreen(
                             key: const ValueKey('ScholarLogin'),
                             onLoginSuccess: (userData) {
+                              final userId = userData['id'].toString();
+                              final username =
+                                  userData['name']?.toString() ?? "Scholar";
+                              final scholarType =
+                                  userData['type']?.toString() ??
+                                      "Student Assistant Scholar";
+                              final scholarshipCategory = userData[
+                                          'scholarship_category']
+                                      ?.toString() ??
+                                  _toBackendScholarshipCategory(
+                                    userData['type']?.toString() ?? '',
+                                  );
                               setState(() {
-                                currentUserId = userData['id'].toString();
-                                currentUsername =
-                                    userData['name']?.toString() ?? "Scholar";
-                                selectedScholarType =
-                                    userData['type']?.toString() ??
-                                        "Student Assistant Scholar";
-                                currentScholarCategory = userData[
-                                            'scholarship_category']
-                                        ?.toString() ??
-                                    _toBackendScholarshipCategory(
-                                      userData['type']?.toString() ?? '',
-                                    );
+                                currentUserId = userId;
+                                currentUsername = username;
+                                selectedScholarType = scholarType;
+                                currentScholarCategory = scholarshipCategory;
                                 currentState = userData['role'] == 'admin'
                                     ? PortalState.adminDashboard
                                     : PortalState.scholarDashboard;
                               });
+                              SessionStore.write(
+                                role: 'scholar',
+                                userId: userId,
+                                username: username,
+                                scholarType: scholarType,
+                                scholarshipCategory: scholarshipCategory,
+                              );
                             },
                             onBack: () => setState(
                                 () => currentState = PortalState.roleSelection),

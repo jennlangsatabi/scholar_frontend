@@ -8,6 +8,7 @@ class CreateAccountModal extends StatefulWidget {
   final String initialEmail;
   final String initialScholarshipType;
   final String initialRole;
+  final String initialGoogleId;
 
   const CreateAccountModal({
     super.key,
@@ -15,6 +16,7 @@ class CreateAccountModal extends StatefulWidget {
     required this.initialEmail,
     required this.initialScholarshipType,
     this.initialRole = 'scholar',
+    this.initialGoogleId = '',
   });
 
   @override
@@ -125,6 +127,10 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           'status': 'pending',
           'scholarship_type': _selectedScholarshipType,
         };
+        final googleId = widget.initialGoogleId.trim();
+        if (googleId.isNotEmpty) {
+          body['google_id'] = googleId;
+        }
 
         final assignedArea = _assignedAreaController.text.trim();
         if (_selectedScholarshipType == 'Student Assistant' &&
@@ -149,6 +155,10 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           'password': _passwordController.text,
           'role': _role,
         };
+        final googleId = widget.initialGoogleId.trim();
+        if (googleId.isNotEmpty) {
+          body['google_id'] = googleId;
+        }
       }
 
       final endpoint = _isScholar ? 'add_scholar.php' : 'request_account.php';
@@ -195,6 +205,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           'user_id': createdId,
           'scholarship_category': backendScholarshipCategory,
           'scholarship_type': _selectedScholarshipType,
+          if (widget.initialGoogleId.trim().isNotEmpty)
+            'google_id': widget.initialGoogleId.trim(),
         });
       } else {
         final createdId = (response['request_id'] ?? response['user_id'] ?? '')
@@ -210,6 +222,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           'email': _emailController.text.trim(),
           'role': _role,
           'request_id': createdId,
+          if (widget.initialGoogleId.trim().isNotEmpty)
+            'google_id': widget.initialGoogleId.trim(),
         });
       }
     } catch (e) {
