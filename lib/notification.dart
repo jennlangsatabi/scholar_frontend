@@ -480,7 +480,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: visibility,
+                  value: visibility,
                   decoration: InputDecoration(
                     labelText: 'Visibility',
                     filled: true,

@@ -295,7 +295,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            initialValue: selectedAudience,
+            value: selectedAudience,
             isExpanded: true,
             items: _audiences
                 .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -332,7 +332,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
               )
             else
               DropdownButtonFormField<String>(
-                initialValue: _selectedScholarId,
+                value: _selectedScholarId,
                 isExpanded: true,
                 items: _scholars
                     .map((s) => DropdownMenuItem(

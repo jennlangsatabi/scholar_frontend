@@ -349,7 +349,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                   if (_isScholar) ...[
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedScholarshipType,
+                      value: _selectedScholarshipType,
                       decoration: _inputDecoration('Category'),
                       items: _scholarshipTypes
                           .map(
@@ -372,7 +372,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     const SizedBox(height: 10),
                     if (_selectedScholarshipType == 'Academic Scholar') ...[
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedAcademicType,
+                        value: _selectedAcademicType,
                         decoration: _inputDecoration('Academic Type'),
                         items: const ['Type A', 'Type B', 'Type C']
                             .map(
@@ -392,7 +392,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     ],
                     if (_selectedScholarshipType == 'Varsity Scholar') ...[
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedSportType,
+                        value: _selectedSportType,
                         decoration: _inputDecoration('Sport Type'),
                         items: const ['Basketball', 'Volleyball']
                             .map(
@@ -412,7 +412,7 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
                     ],
                     if (_selectedScholarshipType == 'Gift of Education') ...[
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedGiftType,
+                        value: _selectedGiftType,
                         decoration: _inputDecoration('Gift Type'),
                         items: ScholarshipTypes.giftTypeOptions.keys
                             .map(

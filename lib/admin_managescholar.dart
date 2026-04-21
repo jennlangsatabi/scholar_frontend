@@ -567,7 +567,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                               const SizedBox(height: 10),
                             ],
                             DropdownButtonFormField<String>(
-                              initialValue: _selectedFormCategory == 'All'
+                              value: _selectedFormCategory == 'All'
                                   ? 'Student Assistant'
                                   : _selectedFormCategory,
                               items: _categories
@@ -595,7 +595,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             const SizedBox(height: 10),
                             if (_selectedFormCategory == 'Academic Scholar') ...[
                               DropdownButtonFormField<String>(
-                                initialValue: _selectedAcademicType,
+                                value: _selectedAcademicType,
                                 items: const ['Type A', 'Type B', 'Type C']
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -611,7 +611,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             ],
                             if (_selectedFormCategory == 'Varsity Scholar') ...[
                               DropdownButtonFormField<String>(
-                                initialValue: _selectedSportType,
+                                value: _selectedSportType,
                                 items: const ['Basketball', 'Volleyball']
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -626,7 +626,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
                             ],
                             if (_selectedFormCategory == 'Gift of Education') ...[
                               DropdownButtonFormField<String>(
-                                initialValue: _selectedGiftType,
+                                value: _selectedGiftType,
                                 items: ScholarshipTypes.giftTypeOptions.keys
                                     .map((c) => DropdownMenuItem(
                                         value: c, child: Text(c)))
@@ -858,7 +858,7 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
           ),
         );
         final categoryFilter = DropdownButtonFormField<String>(
-          initialValue: _selectedFilterCategory,
+          value: _selectedFilterCategory,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,

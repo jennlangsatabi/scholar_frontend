@@ -632,7 +632,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      initialValue: value,
+      value: value,
       dropdownColor: Colors.white,
       style: const TextStyle(color: Color(0xFF2D0D44)),
       decoration: _inputDecoration(label),
