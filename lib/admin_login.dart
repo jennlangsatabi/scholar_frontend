@@ -59,9 +59,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       );
       if (data['status'] == 'success') {
         String dbRole = data['role'].toString().toLowerCase();
-        final String resolvedUserId =
-            (data['id'] ?? data['user_id'] ?? data['admin_id'] ?? '')
-                .toString();
+        final String resolvedUserId = BackendApi.extractFirstString(
+          data,
+          const ['id', 'user_id', 'admin_id', 'account_id', 'member_id'],
+        );
 
         if (dbRole == 'admin') {
           if (resolvedUserId.isEmpty) {
@@ -103,9 +104,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             retries: 2,
           );
           if (data['status'] == 'success') {
-            final String resolvedUserId =
-                (data['id'] ?? data['user_id'] ?? data['admin_id'] ?? '')
-                    .toString();
+            final String resolvedUserId = BackendApi.extractFirstString(
+              data,
+              const [
+                'id',
+                'user_id',
+                'admin_id',
+                'account_id',
+                'member_id',
+              ],
+            );
             final String dbRole = data['role'].toString().toLowerCase();
 
             if (dbRole == 'admin' && resolvedUserId.isNotEmpty) {

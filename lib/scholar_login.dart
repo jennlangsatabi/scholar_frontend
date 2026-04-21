@@ -55,12 +55,14 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
 
     try {
       await BackendApi.warmUp();
+      final backendScholarshipCategory =
+          _toBackendScholarshipCategory(localScholarType);
       final data = await BackendApi.postForm(
         'auth_login.php',
         body: {
           'email': _userController.text,
           'password': _passController.text,
-          'scholarship_category': localScholarType,
+          'scholarship_category': backendScholarshipCategory,
           'scholarship_type': localScholarType,
         },
         timeout: const Duration(seconds: 45),
@@ -72,9 +74,10 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         final String displayName =
             (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
                 .toString();
-        final String resolvedUserId =
-            (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
-                .toString();
+        final String resolvedUserId = BackendApi.extractFirstString(
+          data,
+          const ['id', 'user_id', 'scholar_id', 'account_id', 'member_id'],
+        );
 
         if (resolvedUserId.isEmpty) {
           _showError("Login succeeded but no user ID was returned by PHP.");
@@ -90,8 +93,9 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
             (data['scholarship_category'] ?? data['scholarship_type'] ?? '')
                 .toString()
                 .trim();
-        final resolvedCategory =
-            backendCategory.isNotEmpty ? backendCategory : localScholarType;
+        final resolvedBackendCategory = backendCategory.isNotEmpty
+            ? _toBackendScholarshipCategory(backendCategory)
+            : backendScholarshipCategory;
         if (backendCategory.isNotEmpty &&
             !_matchesSelectedRole(backendCategory, localScholarType)) {
           _showError(
@@ -105,7 +109,8 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         widget.onLoginSuccess({
           'id': resolvedUserId,
           'name': displayName,
-          'type': resolvedCategory,
+          'type': _toDisplayScholarshipType(resolvedBackendCategory),
+          'scholarship_category': resolvedBackendCategory,
           'role': dbRole,
           'email': data['email']?.toString() ?? '',
         });
@@ -119,12 +124,14 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
         try {
           await Future.delayed(const Duration(seconds: 2));
           await BackendApi.warmUp();
+          final backendScholarshipCategory =
+              _toBackendScholarshipCategory(localScholarType);
           final data = await BackendApi.postForm(
             'auth_login.php',
             body: {
               'email': _userController.text,
               'password': _passController.text,
-              'scholarship_category': localScholarType,
+              'scholarship_category': backendScholarshipCategory,
               'scholarship_type': localScholarType,
             },
             timeout: const Duration(seconds: 45),
@@ -135,9 +142,16 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
             final String displayName =
                 (data['username'] ?? data['name'] ?? data['email'] ?? 'Scholar')
                     .toString();
-            final String resolvedUserId =
-                (data['id'] ?? data['user_id'] ?? data['scholar_id'] ?? '')
-                    .toString();
+            final String resolvedUserId = BackendApi.extractFirstString(
+              data,
+              const [
+                'id',
+                'user_id',
+                'scholar_id',
+                'account_id',
+                'member_id',
+              ],
+            );
 
             if (resolvedUserId.isNotEmpty && dbRole == 'scholar') {
               final backendCategory = (data['scholarship_category'] ??
@@ -145,9 +159,9 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
                       '')
                   .toString()
                   .trim();
-              final resolvedCategory = backendCategory.isNotEmpty
-                  ? backendCategory
-                  : localScholarType;
+              final resolvedBackendCategory = backendCategory.isNotEmpty
+                  ? _toBackendScholarshipCategory(backendCategory)
+                  : backendScholarshipCategory;
               if (backendCategory.isEmpty ||
                   _matchesSelectedRole(backendCategory, localScholarType)) {
                 if (!mounted) return;
@@ -157,7 +171,8 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
                 widget.onLoginSuccess({
                   'id': resolvedUserId,
                   'name': displayName,
-                  'type': resolvedCategory,
+                  'type': _toDisplayScholarshipType(resolvedBackendCategory),
+                  'scholarship_category': resolvedBackendCategory,
                   'role': dbRole,
                   'email': data['email']?.toString() ?? '',
                 });
@@ -204,21 +219,39 @@ class _ScholarLoginScreenState extends State<ScholarLoginScreen> {
   }
 
   bool _matchesSelectedRole(String backendCategory, String selected) {
-    String canon(String raw) {
-      final t = raw.toLowerCase();
-      if (t.contains('student') && t.contains('assistant')) {
-        return 'student_assistant';
-      }
-      if (t.contains('varsity')) return 'varsity';
-      if (t.contains('academic')) return 'academic';
-      if (t.contains('gift')) return 'gift';
-      return '';
-    }
-
-    final b = canon(backendCategory);
-    final s = canon(selected);
+    final b = _toBackendScholarshipCategory(backendCategory);
+    final s = _toBackendScholarshipCategory(selected);
     if (b.isEmpty) return false;
     return b == s;
+  }
+
+  String _toBackendScholarshipCategory(String raw) {
+    final normalized = raw.trim().toLowerCase();
+    if (normalized == 'student_assistant' ||
+        (normalized.contains('student') && normalized.contains('assistant'))) {
+      return 'student_assistant';
+    }
+    if (normalized == 'varsity') return 'varsity';
+    if (normalized == 'academic') return 'academic';
+    if (normalized == 'gift_of_education' || normalized.contains('gift')) {
+      return 'gift_of_education';
+    }
+    return '';
+  }
+
+  String _toDisplayScholarshipType(String raw) {
+    switch (_toBackendScholarshipCategory(raw)) {
+      case 'student_assistant':
+        return 'Student Assistant Scholar';
+      case 'varsity':
+        return 'Varsity Scholar';
+      case 'academic':
+        return 'Academic Scholar';
+      case 'gift_of_education':
+        return 'Gift of Education Scholar';
+      default:
+        return localScholarType;
+    }
   }
 
   void _showError(String msg) {

@@ -111,17 +111,23 @@ class _MainPortalPageState extends State<MainPortalPage> {
       if (role == 'admin') {
         currentAdminName = displayName;
       } else {
-        selectedScholarType = (qp['scholarship_category'] ??
-                qp['scholarship_type'] ??
-                selectedScholarType)
-            .trim();
-        currentScholarCategory = selectedScholarType;
+        final rawCategory =
+            (qp['scholarship_category'] ?? qp['scholarship_type'] ?? '').trim();
+        selectedScholarType = _displayScholarshipType(
+          rawCategory.isNotEmpty ? rawCategory : selectedScholarType,
+        );
+        currentScholarCategory = rawCategory.isNotEmpty
+            ? _toBackendScholarshipCategory(rawCategory)
+            : _toBackendScholarshipCategory(selectedScholarType);
       }
       _pendingGoogleAccount = <String, String>{
         'name': displayName,
         'email': email.isNotEmpty ? email : displayName,
         'role': role,
-        if (role == 'scholar') 'scholarship_category': selectedScholarType,
+        if (role == 'scholar')
+          'scholarship_category': currentScholarCategory.isNotEmpty
+              ? currentScholarCategory
+              : _toBackendScholarshipCategory(selectedScholarType),
         if (userId.isNotEmpty) 'user_id': userId,
       };
       return;
@@ -135,17 +141,22 @@ class _MainPortalPageState extends State<MainPortalPage> {
         if (role == 'admin') {
           currentAdminName = displayName;
         }
-        selectedScholarType = (qp['scholarship_category'] ??
-                qp['scholarship_type'] ??
-                selectedScholarType)
-            .trim();
-        currentScholarCategory = selectedScholarType;
+        final rawCategory =
+            (qp['scholarship_category'] ?? qp['scholarship_type'] ?? '').trim();
+        selectedScholarType = _displayScholarshipType(
+          rawCategory.isNotEmpty ? rawCategory : selectedScholarType,
+        );
+        currentScholarCategory = rawCategory.isNotEmpty
+            ? _toBackendScholarshipCategory(rawCategory)
+            : _toBackendScholarshipCategory(selectedScholarType);
         _pendingGoogleAccount = <String, String>{
           'name': displayName,
           'email': email.isNotEmpty ? email : displayName,
           'role': role,
           if (role == 'scholar')
-            'scholarship_category': selectedScholarType,
+            'scholarship_category': currentScholarCategory.isNotEmpty
+                ? currentScholarCategory
+                : _toBackendScholarshipCategory(selectedScholarType),
         };
       }
       return;
@@ -168,9 +179,10 @@ class _MainPortalPageState extends State<MainPortalPage> {
         selectedRole = 'Scholar';
         currentUserId = userId;
         currentUsername = displayName;
-        selectedScholarType =
-            category.isNotEmpty ? category : 'Student Assistant Scholar';
-        currentScholarCategory = category;
+        selectedScholarType = _displayScholarshipType(
+          category.isNotEmpty ? category : 'Student Assistant Scholar',
+        );
+        currentScholarCategory = _toBackendScholarshipCategory(category);
         currentState = PortalState.scholarDashboard;
       });
     }
@@ -244,7 +256,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
   }
 
   String _displayScholarshipType(String category) {
-    switch (category.trim().toLowerCase()) {
+    switch (_toBackendScholarshipCategory(category)) {
       case 'student_assistant':
         return 'Student Assistant Scholar';
       case 'varsity':
@@ -256,6 +268,24 @@ class _MainPortalPageState extends State<MainPortalPage> {
       default:
         return category.isNotEmpty ? category : 'Student Assistant Scholar';
     }
+  }
+
+  String _toBackendScholarshipCategory(String raw) {
+    final normalized = raw.trim().toLowerCase();
+    if (normalized == 'student_assistant' ||
+        (normalized.contains('student') && normalized.contains('assistant'))) {
+      return 'student_assistant';
+    }
+    if (normalized == 'varsity') {
+      return 'varsity';
+    }
+    if (normalized == 'academic') {
+      return 'academic';
+    }
+    if (normalized == 'gift_of_education' || normalized.contains('gift')) {
+      return 'gift_of_education';
+    }
+    return '';
   }
 
   @override
@@ -351,8 +381,12 @@ class _MainPortalPageState extends State<MainPortalPage> {
                                 selectedScholarType =
                                     userData['type']?.toString() ??
                                         "Student Assistant Scholar";
-                                currentScholarCategory =
-                                    userData['type']?.toString() ?? '';
+                                currentScholarCategory = userData[
+                                            'scholarship_category']
+                                        ?.toString() ??
+                                    _toBackendScholarshipCategory(
+                                      userData['type']?.toString() ?? '',
+                                    );
                                 currentState = userData['role'] == 'admin'
                                     ? PortalState.adminDashboard
                                     : PortalState.scholarDashboard;

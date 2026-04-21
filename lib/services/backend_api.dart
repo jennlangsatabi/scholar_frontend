@@ -134,6 +134,59 @@ class BackendApi {
         .toList();
   }
 
+  static String extractFirstString(
+    Map<String, dynamic> payload,
+    List<String> keys, {
+    int maxDepth = 4,
+  }) {
+    final normalizedKeys = keys
+        .map((key) => key.trim())
+        .where((key) => key.isNotEmpty)
+        .toList(growable: false);
+    if (normalizedKeys.isEmpty) {
+      return '';
+    }
+
+    final seen = <Map<dynamic, dynamic>>{};
+    final queue = <({Map<dynamic, dynamic> map, int depth})>[
+      (map: payload, depth: 0),
+    ];
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      final map = current.map;
+      final depth = current.depth;
+      if (!seen.add(map)) continue;
+
+      for (final key in normalizedKeys) {
+        final value = map[key];
+        if (value == null) continue;
+        final text = value.toString().trim();
+        if (text.isNotEmpty &&
+            text.toLowerCase() != 'null' &&
+            text.toLowerCase() != 'undefined') {
+          return text;
+        }
+      }
+
+      if (depth >= maxDepth) continue;
+
+      for (final value in map.values) {
+        if (value is Map) {
+          queue.add((map: value, depth: depth + 1));
+        } else if (value is List) {
+          for (final entry in value) {
+            if (entry is Map) {
+              queue.add((map: entry, depth: depth + 1));
+            }
+          }
+        }
+      }
+    }
+
+    return '';
+  }
+
   static String _cacheKey(String method, Uri uri, {Object? body}) {
     if (body == null) return '$method ${uri.toString()}';
     return '$method ${uri.toString()} ${json.encode(body)}';
