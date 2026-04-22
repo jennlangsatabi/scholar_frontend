@@ -188,13 +188,19 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
     if (requestKind == 'admin_google_access') {
       return 'Admin Google Access';
     }
-    return role == 'admin' ? 'Admin' : 'Scholar';
+    if (role == 'admin') return 'Admin';
+    if (role == 'supervisor') return 'Supervisor';
+    return 'Scholar';
   }
 
   String _requestDescription(Map<String, dynamic> item) {
     final requestKind = (item['request_kind'] ?? '').toString().trim().toLowerCase();
     if (requestKind == 'admin_google_access') {
       return 'This admin wants to continue with Google. Approve to link the Google account before dashboard access is granted.';
+    }
+    final role = (item['role'] ?? '').toString().trim().toLowerCase();
+    if (role == 'supervisor') {
+      return 'Approve or decline this supervisor access request before evaluation access is granted.';
     }
     return 'Approve or decline Google account requests before the user can log in.';
   }

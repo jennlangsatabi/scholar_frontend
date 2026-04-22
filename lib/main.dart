@@ -12,6 +12,7 @@ import 'evaluation_form.dart';
 import 'create_account_modal.dart';
 import 'services/backend_api.dart';
 import 'services/session_store.dart';
+import 'supervisor_access_modal.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +74,9 @@ class _MainPortalPageState extends State<MainPortalPage> {
   String currentScholarCategory = '';
   Map<String, String>? _pendingGoogleAccount;
   String? _pendingNoticeMessage;
+  String supervisorUserId = '';
+  String supervisorName = '';
+  String supervisorToken = '';
 
   @override
   void initState() {
@@ -354,6 +358,9 @@ class _MainPortalPageState extends State<MainPortalPage> {
     final session = SessionStore.read();
     final role = session['role']?.trim().toLowerCase() ?? '';
     final userId = session['user_id']?.trim() ?? '';
+    supervisorUserId = (session['supervisor_user_id'] ?? '').trim();
+    supervisorName = (session['supervisor_name'] ?? '').trim();
+    supervisorToken = (session['supervisor_token'] ?? '').trim();
     if (role.isEmpty || userId.isEmpty) {
       return;
     }
@@ -403,7 +410,46 @@ class _MainPortalPageState extends State<MainPortalPage> {
       currentScholarCategory = '';
       _pendingGoogleAccount = null;
       _pendingNoticeMessage = null;
+      supervisorUserId = '';
+      supervisorName = '';
+      supervisorToken = '';
     });
+  }
+
+  Future<void> _openEvaluationFlow() async {
+    if (supervisorToken.trim().isEmpty) {
+      final result = await showDialog<Map<String, String>>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const SupervisorAccessModal(),
+      );
+      if (!mounted || result == null) {
+        return;
+      }
+
+      setState(() {
+        supervisorUserId = (result['user_id'] ?? '').trim();
+        supervisorName = (result['username'] ?? 'Supervisor').trim();
+        supervisorToken = (result['token'] ?? '').trim();
+        currentState = PortalState.evaluationForm;
+      });
+
+      final currentRole = selectedRole.trim().toLowerCase();
+      SessionStore.write(
+        role: currentRole,
+        userId: currentUserId,
+        username: currentUsername,
+        adminName: currentAdminName,
+        scholarType: selectedScholarType,
+        scholarshipCategory: currentScholarCategory,
+        supervisorUserId: supervisorUserId,
+        supervisorName: supervisorName,
+        supervisorToken: supervisorToken,
+      );
+      return;
+    }
+
+    setState(() => currentState = PortalState.evaluationForm);
   }
 
   @override
@@ -431,7 +477,26 @@ class _MainPortalPageState extends State<MainPortalPage> {
 
     if (currentState == PortalState.evaluationForm) {
       return EvaluationFormScreen(
+        supervisorUserId: supervisorUserId,
+        supervisorName: supervisorName,
+        supervisorToken: supervisorToken,
         onClose: () => setState(() => currentState = PortalState.roleSelection),
+        onSupervisorLogout: () {
+          setState(() {
+            supervisorUserId = '';
+            supervisorName = '';
+            supervisorToken = '';
+            currentState = PortalState.roleSelection;
+          });
+          SessionStore.write(
+            role: selectedRole.trim().toLowerCase(),
+            userId: currentUserId,
+            username: currentUsername,
+            adminName: currentAdminName,
+            scholarType: selectedScholarType,
+            scholarshipCategory: currentScholarCategory,
+          );
+        },
       );
     }
 
@@ -535,8 +600,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
                     _GlassActionButton(
                       label: 'Evaluation Form',
                       icon: Icons.assignment_turned_in_rounded,
-                      onTap: () =>
-                          setState(() => currentState = PortalState.evaluationForm),
+                      onTap: _openEvaluationFlow,
                     ),
                   ],
                 ],

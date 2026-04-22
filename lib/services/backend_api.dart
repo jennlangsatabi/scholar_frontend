@@ -45,16 +45,19 @@ class BackendApi {
   static Future<Map<String, dynamic>> getJson(
     String path, {
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     Duration? timeout,
     Duration? cacheTtl,
     int retries = _defaultRetries,
   }) async {
     final uri = ApiConfig.uri(path, query);
-    final key = _cacheKey('GET', uri);
+    final key = _cacheKey('GET', uri, body: headers);
     return await _requestDecoded<Map<String, dynamic>>(
       key,
       cacheTtl: cacheTtl,
-      request: () => http.get(uri).timeout(timeout ?? _requestTimeout),
+      request: () => http
+          .get(uri, headers: headers)
+          .timeout(timeout ?? _requestTimeout),
       decode: _decodeMap,
       retries: retries,
     );
@@ -63,15 +66,23 @@ class BackendApi {
   static Future<Map<String, dynamic>> postForm(
     String path, {
     Map<String, String>? body,
+    Map<String, String>? headers,
     Duration? timeout,
     int retries = _defaultRetries,
   }) async {
     final uri = ApiConfig.uri(path);
-    final key = _cacheKey('POST', uri, body: body);
+    final key = _cacheKey(
+      'POST',
+      uri,
+      body: {
+        'body': body,
+        'headers': headers,
+      },
+    );
     return await _requestDecoded<Map<String, dynamic>>(
       key,
       request: () => http
-          .post(uri, body: body)
+          .post(uri, body: body, headers: headers)
           .timeout(timeout ?? _requestTimeout),
       decode: _decodeMap,
       retries: retries,
@@ -81,18 +92,30 @@ class BackendApi {
   static Future<Map<String, dynamic>> postJson(
     String path, {
     Map<String, dynamic>? body,
+    Map<String, String>? headers,
     Duration? timeout,
     int retries = _defaultRetries,
   }) async {
     final uri = ApiConfig.uri(path);
     final encodedBody = json.encode(body ?? const <String, dynamic>{});
-    final key = _cacheKey('POSTJSON', uri, body: encodedBody);
+    final mergedHeaders = <String, String>{
+      'Content-Type': 'application/json',
+      ...?headers,
+    };
+    final key = _cacheKey(
+      'POSTJSON',
+      uri,
+      body: {
+        'body': encodedBody,
+        'headers': mergedHeaders,
+      },
+    );
     return await _requestDecoded<Map<String, dynamic>>(
       key,
       request: () => http
           .post(
             uri,
-            headers: const {'Content-Type': 'application/json'},
+            headers: mergedHeaders,
             body: encodedBody,
           )
           .timeout(timeout ?? _requestTimeout),
@@ -104,16 +127,19 @@ class BackendApi {
   static Future<List<Map<String, dynamic>>> getList(
     String path, {
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     Duration? timeout,
     Duration? cacheTtl,
     int retries = _defaultRetries,
   }) async {
     final uri = ApiConfig.uri(path, query);
-    final key = _cacheKey('GETLIST', uri);
+    final key = _cacheKey('GETLIST', uri, body: headers);
     return await _requestDecoded<List<Map<String, dynamic>>>(
       key,
       cacheTtl: cacheTtl,
-      request: () => http.get(uri).timeout(timeout ?? _requestTimeout),
+      request: () => http
+          .get(uri, headers: headers)
+          .timeout(timeout ?? _requestTimeout),
       decode: _decodeList,
       retries: retries,
     );

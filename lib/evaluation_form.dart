@@ -6,8 +6,19 @@ import 'services/backend_api.dart';
 
 class EvaluationFormScreen extends StatefulWidget {
   final VoidCallback onClose;
+  final VoidCallback onSupervisorLogout;
+  final String supervisorUserId;
+  final String supervisorName;
+  final String supervisorToken;
 
-  const EvaluationFormScreen({super.key, required this.onClose});
+  const EvaluationFormScreen({
+    super.key,
+    required this.onClose,
+    required this.onSupervisorLogout,
+    required this.supervisorUserId,
+    required this.supervisorName,
+    required this.supervisorToken,
+  });
 
   @override
   State<EvaluationFormScreen> createState() => _EvaluationFormScreenState();
@@ -30,9 +41,14 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
   final Map<String, int> _ratings = {};
 
+  Map<String, String> get _authHeaders => <String, String>{
+        'Authorization': 'Bearer ${widget.supervisorToken}',
+      };
+
   @override
   void initState() {
     super.initState();
+    _supervisorController.text = widget.supervisorName;
     _loadScholars();
   }
 
@@ -54,7 +70,8 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
     try {
       final payload = await BackendApi.getJson(
-        'get_scholars.php',
+        'get_scholars_for_evaluation.php',
+        headers: _authHeaders,
         cacheTtl: const Duration(minutes: 2),
         retries: 1,
       );
@@ -106,6 +123,33 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       }
       return normalized.contains('varsity');
     }).toList();
+  }
+
+  Map<String, dynamic>? _selectedScholar() {
+    final selectedId = int.tryParse(_selectedScholarId ?? '');
+    if (selectedId == null) return null;
+    for (final scholar in _filteredScholars()) {
+      if ((scholar['scholar_id'] ?? 0) == selectedId) {
+        return scholar;
+      }
+    }
+    return null;
+  }
+
+  void _syncScholarDetails(Map<String, dynamic>? scholar) {
+    if (scholar == null) {
+      _courseController.clear();
+      _assignedAreaController.clear();
+      return;
+    }
+
+    _courseController.text =
+        (scholar['course_year'] ?? '').toString().trim().isNotEmpty
+            ? (scholar['course_year'] ?? '').toString().trim()
+            : '${(scholar['course'] ?? '').toString().trim()} - Year ${(scholar['year_level'] ?? '').toString().trim()}'
+                .trim();
+    _assignedAreaController.text =
+        (scholar['assigned_area'] ?? '').toString().trim();
   }
 
   List<_RatingItem> _ratingItems() {
@@ -219,11 +263,11 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               color: Color(0xFF4A148C)),
         ),
         const SizedBox(width: 16),
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Scholar Evaluation Form',
                 style: TextStyle(
                   color: Color(0xFF2D0D44),
@@ -232,13 +276,28 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 ),
               ),
               SizedBox(height: 4),
-              Text(
+              const Text(
                 'Select a scholar type, choose a student, then rate performance.',
                 style: TextStyle(color: Color(0xFF6F5E7D)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Logged in as Supervisor: ${widget.supervisorName}',
+                style: const TextStyle(
+                  color: Color(0xFF4A148C),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
         ),
+        TextButton.icon(
+          onPressed: widget.onSupervisorLogout,
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF4A148C)),
+          icon: const Icon(Icons.logout_rounded),
+          label: const Text('Sign out'),
+        ),
+        const SizedBox(width: 8),
         TextButton.icon(
           onPressed: widget.onClose,
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF4A148C)),
@@ -266,6 +325,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
         setState(() {
           _selectedProgram = label;
           _selectedScholarId = null;
+          _syncScholarDetails(null);
         });
       },
       borderRadius: BorderRadius.circular(16),
@@ -305,6 +365,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedScholarId = value;
+                    _syncScholarDetails(_selectedScholar());
                   });
                 },
               ),
@@ -315,7 +376,11 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 _textField('Assigned Area', _assignedAreaController),
               if (_selectedProgram == 'Student Assistant')
                 const SizedBox(height: 12),
-              _textField('Name of Supervisor', _supervisorController),
+              _textField(
+                'Name of Supervisor',
+                _supervisorController,
+                readOnly: true,
+              ),
               const SizedBox(height: 12),
               _textField('For the Month', _monthController),
             ],
@@ -545,6 +610,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     try {
       final payload = await BackendApi.postForm(
         'save_evaluation.php',
+        headers: _authHeaders,
         body: {
           'scholar_id': _selectedScholarId!,
           'program_type': _selectedProgram == 'Student Assistant'
@@ -552,7 +618,6 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               : 'varsity',
           'course_year': _courseController.text.trim(),
           'assigned_area': _assignedAreaController.text.trim(),
-          'supervisor_name': _supervisorController.text.trim(),
           'month_label': _monthController.text.trim(),
           'ratings_json': jsonEncode(_ratings),
           'total_score': totalScore.toString(),
@@ -580,7 +645,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       _selectedScholarId = null;
       _courseController.clear();
       _assignedAreaController.clear();
-      _supervisorController.clear();
+      _supervisorController.text = widget.supervisorName;
       _monthController.clear();
       _recommendationController.clear();
     });
@@ -632,7 +697,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       dropdownColor: Colors.white,
       style: const TextStyle(color: Color(0xFF2D0D44)),
       decoration: _inputDecoration(label),
@@ -656,9 +721,14 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
-  Widget _textField(String label, TextEditingController controller) {
+  Widget _textField(
+    String label,
+    TextEditingController controller, {
+    bool readOnly = false,
+  }) {
     return TextField(
       controller: controller,
+      readOnly: readOnly,
       decoration: _inputDecoration(label),
       style: const TextStyle(color: Color(0xFF2D0D44)),
     );
