@@ -36,6 +36,7 @@ class _VerificationScreenState extends State<VerificationScreen>
   bool _isFetching = false;
   Timer? _pollTimer;
   String _lastSubmissionSignature = '';
+  bool _pollPausedByConnectionIssue = false;
 
   @override
   void initState() {
@@ -65,6 +66,9 @@ class _VerificationScreenState extends State<VerificationScreen>
   Future<void> fetchPendingDocuments({bool silent = false}) async {
     if (_isFetching) return;
     _isFetching = true;
+    if (!silent) {
+      _pollPausedByConnectionIssue = false;
+    }
 
     if (mounted && (!silent || pendingDocs.isEmpty)) {
       setState(() {
@@ -92,12 +96,16 @@ class _VerificationScreenState extends State<VerificationScreen>
       });
     } catch (e) {
       if (!mounted) return;
+      final friendlyMessage = _friendlyFetchError(e);
       setState(() {
         if (!silent || pendingDocs.isEmpty) {
-          errorMessage = "Connection error: ${e.toString()}";
+          errorMessage = friendlyMessage;
         }
         isLoading = false;
       });
+      if (_isCorsStyleFailure(e)) {
+        _pollPausedByConnectionIssue = true;
+      }
     } finally {
       _isFetching = false;
     }
@@ -163,7 +171,7 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   Future<void> _pollForNewSubmissions() async {
-    if (_isFetching) return;
+    if (_isFetching || _pollPausedByConnectionIssue) return;
     try {
       final list = await BackendApi.getList(
         'get_pending_verifications.php',
@@ -174,9 +182,28 @@ class _VerificationScreenState extends State<VerificationScreen>
       if (nextSignature != _lastSubmissionSignature) {
         await fetchPendingDocuments(silent: true);
       }
-    } catch (_) {
+    } catch (e) {
+      if (_isCorsStyleFailure(e)) {
+        _pollPausedByConnectionIssue = true;
+      }
       // Keep passive polling silent; manual refresh still works.
     }
+  }
+
+  bool _isCorsStyleFailure(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('xmlhttprequest error') ||
+        text.contains('cors') ||
+        text.contains('failed to fetch') ||
+        text.contains('err_failed');
+  }
+
+  String _friendlyFetchError(Object error) {
+    if (_isCorsStyleFailure(error)) {
+      return 'Verification data is blocked by backend CORS settings right now. '
+          'Allow `https://scholar-frontend-yqnn.onrender.com` in the backend `CORS_ALLOWED_ORIGINS` setting, then press Retry.';
+    }
+    return 'Connection error: ${error.toString()}';
   }
 
   void _showSnackBar(String msg, Color color) {
@@ -847,6 +874,17 @@ class _VerificationScreenState extends State<VerificationScreen>
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 10),
             Text(errorMessage, textAlign: TextAlign.center),
+            if (_pollPausedByConnectionIssue) ...[
+              const SizedBox(height: 10),
+              const Text(
+                'Auto-refresh is paused until the connection issue is fixed.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF6A5A79),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             FilledButton(
                 onPressed: fetchPendingDocuments, child: const Text("Retry")),

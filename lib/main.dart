@@ -222,6 +222,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
             details['scholarship_category'] ?? selectedScholarType,
         initialRole: details['role'] ?? 'scholar',
         initialGoogleId: details['google_id'] ?? '',
+        initialUserId: details['user_id'] ?? '',
       ),
     );
 
@@ -239,6 +240,8 @@ class _MainPortalPageState extends State<MainPortalPage> {
     final scholarshipCategory =
         (result['scholarship_category'] ?? details['scholarship_category'] ?? '')
             .trim();
+    final normalizedScholarshipCategory =
+        _toBackendScholarshipCategory(scholarshipCategory);
 
     if (role == 'admin') {
       setState(() {
@@ -264,8 +267,9 @@ class _MainPortalPageState extends State<MainPortalPage> {
       selectedRole = 'Scholar';
       currentUsername = displayName;
       if (scholarshipCategory.isNotEmpty) {
-        selectedScholarType = _displayScholarshipType(scholarshipCategory);
-        currentScholarCategory = scholarshipCategory;
+        selectedScholarType =
+            _displayScholarshipType(normalizedScholarshipCategory);
+        currentScholarCategory = normalizedScholarshipCategory;
       }
     });
     SessionStore.write(
@@ -273,7 +277,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
       userId: userId,
       username: displayName,
       scholarType: selectedScholarType,
-      scholarshipCategory: scholarshipCategory,
+      scholarshipCategory: normalizedScholarshipCategory,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(

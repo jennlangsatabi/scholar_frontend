@@ -9,6 +9,7 @@ class CreateAccountModal extends StatefulWidget {
   final String initialScholarshipType;
   final String initialRole;
   final String initialGoogleId;
+  final String initialUserId;
 
   const CreateAccountModal({
     super.key,
@@ -17,6 +18,7 @@ class CreateAccountModal extends StatefulWidget {
     required this.initialScholarshipType,
     this.initialRole = 'scholar',
     this.initialGoogleId = '',
+    this.initialUserId = '',
   });
 
   @override
@@ -37,6 +39,36 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
 
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  bool _isDuplicateAccountError(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('already in use') ||
+        normalized.contains('already exists') ||
+        normalized.contains('email is already') ||
+        normalized.contains('username or email already exists') ||
+        normalized.contains('duplicate');
+  }
+
+  Future<void> _showDuplicateAccountModal(String message) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Account Already Exists'),
+        content: Text(
+          message.isNotEmpty
+              ? message
+              : 'This email is already registered in the system. Please sign in with that account instead.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   final List<String> _scholarshipTypes = const [
     'Student Assistant',
@@ -112,7 +144,9 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
       final Map<String, String> body;
       if (_isScholar) {
         body = {
-          'user_id': '0',
+          'user_id': widget.initialUserId.trim().isNotEmpty
+              ? widget.initialUserId.trim()
+              : '0',
           'username': fullName,
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
@@ -207,6 +241,8 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
           'scholarship_type': _selectedScholarshipType,
           if (widget.initialGoogleId.trim().isNotEmpty)
             'google_id': widget.initialGoogleId.trim(),
+          if (widget.initialUserId.trim().isNotEmpty)
+            'linked_user_id': widget.initialUserId.trim(),
         });
       } else {
         final createdId = (response['request_id'] ?? response['user_id'] ?? '')
@@ -228,9 +264,13 @@ class _CreateAccountModalState extends State<CreateAccountModal> {
       }
     } catch (e) {
       if (!mounted) return;
+      final message = e.toString().replaceFirst('FormatException: ', '');
       setState(() {
-        _errorMessage = e.toString().replaceFirst('FormatException: ', '');
+        _errorMessage = message;
       });
+      if (_isDuplicateAccountError(message)) {
+        await _showDuplicateAccountModal(message);
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
