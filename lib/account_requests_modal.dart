@@ -39,7 +39,7 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
           ? data
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
-              .toList(growable: false)
+              .toList()
           : <Map<String, dynamic>>[];
 
       if (!mounted) return;
@@ -71,8 +71,10 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
 
       if (!mounted) return;
       setState(() {
-        _items.removeWhere((entry) =>
-            (entry['request_id'] ?? '').toString() == requestId);
+        _items = _items
+            .where((entry) =>
+                (entry['request_id'] ?? '').toString() != requestId)
+            .toList();
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +143,10 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
 
       if (!mounted) return;
       setState(() {
-        _items.removeWhere((entry) =>
-            (entry['request_id'] ?? '').toString() == requestId);
+        _items = _items
+            .where((entry) =>
+                (entry['request_id'] ?? '').toString() != requestId)
+            .toList();
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
