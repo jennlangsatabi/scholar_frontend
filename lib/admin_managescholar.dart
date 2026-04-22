@@ -1244,78 +1244,85 @@ class _ManageScholarScreenState extends State<ManageScholarScreen> {
     String name,
   ) {
     if (_showArchived) {
-      return Wrap(
-        spacing: 6,
-        runSpacing: 6,
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => _showRestoreConfirmation(
+                (scholar['user_id'] ?? '').toString(),
+                name,
+              ),
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.green),
+              icon: const Icon(Icons.restore_rounded, size: 18),
+              label: const Text('Restore'),
+            ),
+            const SizedBox(width: 6),
+            OutlinedButton.icon(
+              onPressed: () => _showDeleteConfirmation(
+                (scholar['user_id'] ?? '').toString(),
+                name,
+              ),
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+              icon: const Icon(Icons.delete_forever, size: 18),
+              label: const Text('Delete Permanently'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           OutlinedButton.icon(
-            onPressed: () => _showRestoreConfirmation(
+            onPressed: () {
+              _courseController.text = course;
+              _yearLevelController.text = year;
+              _assignedAreaController.text = rawAssigned == '-' ? '' : rawAssigned;
+              _selectedFormCategory = _displayCategory(rawCategory);
+              _selectedAcademicType = _academicTypeLabel(scholar['academic_type']);
+              _selectedSportType = _sportTypeLabel(scholar['sport_type']);
+              _selectedGiftType = _giftTypeLabel(scholar['gift_type']).isEmpty
+                  ? ScholarshipTypes.giftTypeOptions.keys.first
+                  : _giftTypeLabel(scholar['gift_type']);
+              _showFormDialog(
+                title: 'Edit Scholar',
+                isEdit: true,
+                onSave: () =>
+                    _editScholar((scholar['scholar_id'] ?? '').toString()),
+              );
+            },
+            icon: const Icon(Icons.edit, size: 18),
+            label: const Text('Edit'),
+          ),
+          const SizedBox(width: 6),
+          OutlinedButton.icon(
+            onPressed: () => _showArchiveConfirmation(
               (scholar['user_id'] ?? '').toString(),
               name,
             ),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.green),
-            icon: const Icon(Icons.restore_rounded, size: 18),
-            label: const Text('Restore'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF8E4B10),
+            ),
+            icon: const Icon(Icons.archive_outlined, size: 18),
+            label: const Text('Archive'),
           ),
+          const SizedBox(width: 6),
           OutlinedButton.icon(
             onPressed: () => _showDeleteConfirmation(
               (scholar['user_id'] ?? '').toString(),
               name,
             ),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-            icon: const Icon(Icons.delete_forever, size: 18),
-            label: const Text('Delete Permanently'),
+            icon: const Icon(Icons.delete, size: 18),
+            label: const Text('Delete'),
           ),
         ],
-      );
-    }
-
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        OutlinedButton.icon(
-          onPressed: () {
-            _courseController.text = course;
-            _yearLevelController.text = year;
-            _assignedAreaController.text = rawAssigned == '-' ? '' : rawAssigned;
-            _selectedFormCategory = _displayCategory(rawCategory);
-            _selectedAcademicType = _academicTypeLabel(scholar['academic_type']);
-            _selectedSportType = _sportTypeLabel(scholar['sport_type']);
-            _selectedGiftType = _giftTypeLabel(scholar['gift_type']).isEmpty
-                ? ScholarshipTypes.giftTypeOptions.keys.first
-                : _giftTypeLabel(scholar['gift_type']);
-            _showFormDialog(
-              title: 'Edit Scholar',
-              isEdit: true,
-              onSave: () =>
-                  _editScholar((scholar['scholar_id'] ?? '').toString()),
-            );
-          },
-          icon: const Icon(Icons.edit, size: 18),
-          label: const Text('Edit'),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => _showArchiveConfirmation(
-            (scholar['user_id'] ?? '').toString(),
-            name,
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF8E4B10),
-          ),
-          icon: const Icon(Icons.archive_outlined, size: 18),
-          label: const Text('Archive'),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => _showDeleteConfirmation(
-            (scholar['user_id'] ?? '').toString(),
-            name,
-          ),
-          style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-          icon: const Icon(Icons.delete, size: 18),
-          label: const Text('Delete'),
-        ),
-      ],
+      ),
     );
   }
 

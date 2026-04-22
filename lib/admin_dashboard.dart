@@ -33,6 +33,22 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
   DateTime? lastUpdatedAt;
   Timer? _pollTimer;
 
+  bool _isCorsStyleFailure(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('xmlhttprequest error') ||
+        text.contains('cors') ||
+        text.contains('failed to fetch') ||
+        text.contains('err_failed');
+  }
+
+  String _friendlyDashboardError(Object error) {
+    if (_isCorsStyleFailure(error)) {
+      return 'Unable to sync dashboard because the backend is blocking browser access. '
+          'Allow `https://scholar-frontend-yqnn.onrender.com` in `CORS_ALLOWED_ORIGINS` and redeploy the backend.';
+    }
+    return 'Unable to sync dashboard: $error';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,7 +127,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView>
       setState(() {
         isLoading = false;
         isRefreshing = false;
-        errorMessage = "Unable to sync dashboard: $e";
+        errorMessage = _friendlyDashboardError(e);
       });
     }
   }
