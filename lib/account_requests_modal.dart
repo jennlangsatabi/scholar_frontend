@@ -182,6 +182,23 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
     }
   }
 
+  String _requestLabel(Map<String, dynamic> item) {
+    final requestKind = (item['request_kind'] ?? '').toString().trim().toLowerCase();
+    final role = (item['role'] ?? '').toString().trim().toLowerCase();
+    if (requestKind == 'admin_google_access') {
+      return 'Admin Google Access';
+    }
+    return role == 'admin' ? 'Admin' : 'Scholar';
+  }
+
+  String _requestDescription(Map<String, dynamic> item) {
+    final requestKind = (item['request_kind'] ?? '').toString().trim().toLowerCase();
+    if (requestKind == 'admin_google_access') {
+      return 'This admin wants to continue with Google. Approve to link the Google account before dashboard access is granted.';
+    }
+    return 'Approve or decline Google account requests before the user can log in.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -218,7 +235,7 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Approve or decline Google account requests before the user can log in.',
+                'Approve or decline account and admin-access requests before users can continue.',
                 style: TextStyle(color: Color(0xFF6A5A79)),
               ),
               const SizedBox(height: 16),
@@ -246,6 +263,7 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
                                 itemBuilder: (context, index) {
                                   final item = _items[index];
                                   final role = (item['role'] ?? '').toString();
+                                  final requestKind = (item['request_kind'] ?? '').toString();
                                   final name = (item['username'] ?? '').toString();
                                   final email = (item['email'] ?? '').toString();
                                   final category = (item['scholarship_category'] ?? '').toString();
@@ -276,7 +294,7 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
                                                 ),
                                               ),
                                             ),
-                                            _pill(role == 'admin' ? 'Admin' : 'Scholar'),
+                                            _pill(_requestLabel(item)),
                                           ],
                                         ),
                                         const SizedBox(height: 8),
@@ -286,7 +304,16 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
                                             color: Color(0xFF4B3B5A),
                                           ),
                                         ),
-                                        if (role == 'scholar') ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _requestDescription(item),
+                                          style: const TextStyle(
+                                            color: Color(0xFF6A5A79),
+                                          ),
+                                        ),
+                                        if (role == 'scholar' &&
+                                            requestKind.trim().toLowerCase() !=
+                                                'admin_google_access') ...[
                                           const SizedBox(height: 6),
                                           Text(
                                             'Scholarship: $label',
@@ -306,7 +333,12 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
                                                 style: OutlinedButton.styleFrom(
                                                   foregroundColor: Colors.redAccent,
                                                 ),
-                                                child: const Text('Decline'),
+                                                child: Text(
+                                                  requestKind.trim().toLowerCase() ==
+                                                          'admin_google_access'
+                                                      ? 'Decline Access'
+                                                      : 'Decline',
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -318,7 +350,12 @@ class _AccountRequestsModalState extends State<AccountRequestsModal> {
                                                 style: FilledButton.styleFrom(
                                                   backgroundColor: const Color(0xFF205C3B),
                                                 ),
-                                                child: const Text('Approve'),
+                                                child: Text(
+                                                  requestKind.trim().toLowerCase() ==
+                                                          'admin_google_access'
+                                                      ? 'Approve Access'
+                                                      : 'Approve',
+                                                ),
                                               ),
                                             ),
                                           ],

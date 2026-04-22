@@ -72,6 +72,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
   String selectedScholarType = 'Student Assistant Scholar';
   String currentScholarCategory = '';
   Map<String, String>? _pendingGoogleAccount;
+  String? _pendingNoticeMessage;
 
   @override
   void initState() {
@@ -79,6 +80,18 @@ class _MainPortalPageState extends State<MainPortalPage> {
     _restoreSession();
     _tryHandleOAuthCallback();
     BackendApi.warmUp();
+    if (_pendingNoticeMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _pendingNoticeMessage == null) return;
+        final messenger = ScaffoldMessenger.maybeOf(context);
+        if (messenger != null) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(_pendingNoticeMessage!)),
+          );
+        }
+        _pendingNoticeMessage = null;
+      });
+    }
     if (_pendingGoogleAccount != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _pendingGoogleAccount == null) return;
@@ -94,7 +107,9 @@ class _MainPortalPageState extends State<MainPortalPage> {
     }
 
     final status = (qp['status'] ?? '').trim().toLowerCase();
-    if (status != 'success' && status != 'pending_account') {
+    if (status != 'success' &&
+        status != 'pending_account' &&
+        status != 'pending_admin_access') {
       return;
     }
 
@@ -105,6 +120,19 @@ class _MainPortalPageState extends State<MainPortalPage> {
             ? (qp['name'] ?? qp['email'] ?? '').trim()
             : 'Scholar';
     final email = (qp['email'] ?? '').trim();
+
+    if (status == 'pending_admin_access') {
+      SessionStore.clear();
+      currentState = PortalState.login;
+      selectedRole = 'Admin';
+      currentUsername = displayName;
+      currentAdminName = displayName;
+      _pendingGoogleAccount = null;
+      _pendingNoticeMessage = (qp['message'] ?? '').trim().isNotEmpty
+          ? (qp['message'] ?? '').trim()
+          : 'Your Google admin access is waiting for approval from an existing admin.';
+      return;
+    }
 
     if (status == 'pending_account') {
       SessionStore.clear();
@@ -374,6 +402,7 @@ class _MainPortalPageState extends State<MainPortalPage> {
       selectedScholarType = 'Student Assistant Scholar';
       currentScholarCategory = '';
       _pendingGoogleAccount = null;
+      _pendingNoticeMessage = null;
     });
   }
 
